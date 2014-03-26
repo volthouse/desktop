@@ -12,6 +12,13 @@
 #include <imagepoint.h>
 #include <vector.h>
 
+#include <libnova/solar.h>
+#include <libnova/julian_day.h>
+#include <libnova/rise_set.h>
+#include <libnova/transform.h>
+#include <libnova/sidereal_time.h>
+#include <libnova/utility.h>
+
 using namespace qmapcontrol;
 
 namespace Ui {
@@ -41,6 +48,9 @@ private:
     Vector* sunHeading;
     Vector* sunRise;
     Vector* sunSet;
+
+    void addZoomButtons();
+    void setSunVectors(ln_zonedate* date, ln_lnlat_posn* observer, Vector* vector);
 };
 
 #endif // MAINWINDOW_H

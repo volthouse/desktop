@@ -2,12 +2,6 @@
 #include "ui_mainwindow.h"
 
 #include <stdio.h>
-#include <libnova/solar.h>
-#include <libnova/julian_day.h>
-#include <libnova/rise_set.h>
-#include <libnova/transform.h>
-#include <libnova/sidereal_time.h>
-#include <libnova/utility.h>
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -50,8 +44,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QList<Point*> points;
     points << sunHeading;
-    //points << sunRise;
-    //points << sunSet;
+    points << sunRise;
+    points << sunSet;
 
     LineString* sunArrows = new LineString(points, "", pen);
 
@@ -65,6 +59,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->dateTimeEdit->setDateTime(QDateTime::currentDateTime());
     ui->latEdit->setText("51,46");
     ui->lngEdit->setText("8,85");
+
+    addZoomButtons();
 }
 
 MainWindow::~MainWindow()
@@ -127,6 +123,11 @@ void MainWindow::on_calcButton_clicked()
 
     }
 
+    sunHeading->setVisible(false);
+
+    setSunVectors(&rise, &observer, sunRise);
+    setSunVectors(&set, &observer, sunSet);
+
     mc->setView(QPointF(observer.lng, observer.lat));
 
     //overlay->addGeometry();
@@ -135,8 +136,6 @@ void MainWindow::on_calcButton_clicked()
 void MainWindow::on_dateTimeEdit_dateTimeChanged(const QDateTime &date)
 {
     struct ln_equ_posn equ;
-    struct ln_rst_time rst;
-    struct ln_zonedate rise, set, transit;
     struct ln_lnlat_posn observer;
 
     struct ln_hrz_posn hpos;
@@ -166,22 +165,53 @@ void MainWindow::on_dateTimeEdit_dateTimeChanged(const QDateTime &date)
 
     sunHeading->setHeading(a);
 
-
-    if (ln_get_solar_rst (JD, &observer, &rst) == 1) {
-        ui->listWidget->addItem(QString("Zirkumpolar"));
-    } else {
-        ln_get_local_date (rst.rise, &rise);
-        ln_get_local_date (rst.transit, &transit);
-        ln_get_local_date (rst.set, &set);
-        //s.sprintf("Aufgang: %02d:%02d:%02d", rise.hours, rise.minutes, (int)rise.seconds);
-        //ui->listWidget->addItem(s);
-        //s.sprintf("Transit: %02d:%02d:%02d", transit.hours, transit.minutes, (int)transit.seconds);
-        //ui->listWidget->addItem(s);
-        //s.sprintf("Untergang: %02d:%02d:%02d", set.hours, set.minutes, (int)set.seconds);
-        //ui->listWidget->addItem(s);
-
-    }
-
     mc->updateRequestNew();
 
+}
+
+void MainWindow::setSunVectors(ln_zonedate* date, ln_lnlat_posn* observer, Vector* vector)
+{
+    struct ln_equ_posn equ;
+    struct ln_hrz_posn hpos;
+
+    double JD;
+
+    ln_date lnDate;
+    lnDate.years = date->years;
+    lnDate.months = date->months;
+    lnDate.days = date->days;
+    lnDate.hours = date->hours;
+    lnDate.minutes = date->minutes;
+    lnDate.seconds = date->seconds;
+
+    JD = ln_get_julian_day(&lnDate);
+
+    /* ra, dec */
+    ln_get_solar_equ_coords (JD, &equ);
+
+
+    ln_get_hrz_from_equ(&equ, observer, JD, &hpos);
+
+    double a = ln_range_degrees(hpos.az - 180);
+    vector->setHeading(a);
+}
+
+void MainWindow::addZoomButtons()
+{
+    // create buttons as controls for zoom
+    QPushButton* zoomin = new QPushButton("+");
+    QPushButton* zoomout = new QPushButton("-");
+    zoomin->setMaximumWidth(50);
+    zoomout->setMaximumWidth(50);
+
+    connect(zoomin, SIGNAL(clicked(bool)),
+              mc, SLOT(zoomIn()));
+    connect(zoomout, SIGNAL(clicked(bool)),
+              mc, SLOT(zoomOut()));
+
+    // add zoom buttons to the layout of the MapControl
+    QVBoxLayout* innerlayout = new QVBoxLayout;
+    innerlayout->addWidget(zoomin);
+    innerlayout->addWidget(zoomout);
+    mc->setLayout(innerlayout);
 }
