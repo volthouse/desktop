@@ -13,10 +13,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // create MapControl
     mc = new MapControl(QSize(638,370));
+    mc->setObjectName("MapControl");
     mc->showScale(true);
-    mc->setSizePolicy(QSizePolicy::Maximum,
-                      QSizePolicy::Maximum);
+
+
     ui->verticalLayout->addWidget(mc);
+
 
     mapadapter = new GoogleMapAdapter();
     //MapAdapter* mapadapter_overlay = new YahooMapAdapter("us.maps3.yimg.com", "/aerial.maps.yimg.com/png?v=2.2&t=h&s=256&x=%2&y=%3&z=%1");
@@ -37,10 +39,12 @@ MainWindow::MainWindow(QWidget *parent) :
     QPen* pen = new QPen(QColor(0,0,255,100));
     pen->setWidth(5);
 
-
-    sunHeading = new Vector(8.85,51.46, 1000, 45, "SunArrow", Vector::Middle, pen);
     sunRise = new Vector(8.85,51.46, 1000, 45, "SunRiseArrow", Vector::Middle, pen);
     sunSet = new Vector(8.85,51.46, 1000, 45, "SunSetArrow", Vector::Middle, pen);
+
+    pen = new QPen(QColor(255,0,0,100));
+    pen->setWidth(5);
+    sunHeading = new Vector(8.85,51.46, 1000, 45, "SunArrow", Vector::Middle, pen);
 
     QList<Point*> points;
     points << sunHeading;
@@ -52,7 +56,7 @@ MainWindow::MainWindow(QWidget *parent) :
     notes->addGeometry(sunArrows);
 
 
-
+    mc->setUseBoundingBox(false);
     mc->setView(QPointF(8.85,51.46));
     mc->setZoom(10);
 
@@ -61,6 +65,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->lngEdit->setText("8,85");
 
     addZoomButtons();
+    setSunRiseAndSetVectors(QDateTime::currentDateTime());
+    setSunCurrentHeading(QDateTime::currentDateTime());
 }
 
 MainWindow::~MainWindow()
@@ -68,8 +74,12 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::on_dateTimeEdit_dateTimeChanged(const QDateTime &date)
+{
+    setSunCurrentHeading(date);
+}
 
-void MainWindow::on_calcButton_clicked()
+void MainWindow::setSunRiseAndSetVectors(const QDateTime &dateTime)
 {
     struct ln_equ_posn equ;
     struct ln_rst_time rst;
@@ -84,12 +94,12 @@ void MainWindow::on_calcButton_clicked()
     observer.lng = ui->lngEdit->text().toFloat();
 
     ln_date date;
-    date.years = ui->dateTimeEdit->dateTime().date().year();
-    date.months = ui->dateTimeEdit->dateTime().date().month();
-    date.days = ui->dateTimeEdit->dateTime().date().day();
-    date.hours = ui->dateTimeEdit->dateTime().time().hour();
-    date.minutes = ui->dateTimeEdit->dateTime().time().minute();
-    date.seconds = ui->dateTimeEdit->dateTime().time().second();
+    date.years = dateTime.date().year();
+    date.months = dateTime.date().month();
+    date.days = dateTime.date().day();
+    date.hours = dateTime.time().hour();
+    date.minutes = dateTime.time().minute();
+    date.seconds = dateTime.time().second();
 
     JD = ln_get_julian_day(&date);
 
@@ -123,7 +133,7 @@ void MainWindow::on_calcButton_clicked()
 
     }
 
-    sunHeading->setVisible(false);
+    //sunHeading->setVisible(false);
 
     setSunVectors(&rise, &observer, sunRise);
     setSunVectors(&set, &observer, sunSet);
@@ -133,7 +143,7 @@ void MainWindow::on_calcButton_clicked()
     //overlay->addGeometry();
 }
 
-void MainWindow::on_dateTimeEdit_dateTimeChanged(const QDateTime &date)
+void MainWindow::setSunCurrentHeading(const QDateTime &dateTime)
 {
     struct ln_equ_posn equ;
     struct ln_lnlat_posn observer;
@@ -146,12 +156,12 @@ void MainWindow::on_dateTimeEdit_dateTimeChanged(const QDateTime &date)
     observer.lng = ui->lngEdit->text().toFloat();
 
     ln_date novaDate;
-    novaDate.years = date.date().year();
-    novaDate.months = date.date().month();
-    novaDate.days = date.date().day();
-    novaDate.hours = date.time().hour();
-    novaDate.minutes = date.time().minute();
-    novaDate.seconds = date.time().second();
+    novaDate.years = dateTime.date().year();
+    novaDate.months = dateTime.date().month();
+    novaDate.days = dateTime.date().day();
+    novaDate.hours = dateTime.time().hour();
+    novaDate.minutes = dateTime.time().minute();
+    novaDate.seconds = dateTime.time().second();
 
     JD = ln_get_julian_day(&novaDate);
 
@@ -166,7 +176,6 @@ void MainWindow::on_dateTimeEdit_dateTimeChanged(const QDateTime &date)
     sunHeading->setHeading(a);
 
     mc->updateRequestNew();
-
 }
 
 void MainWindow::setSunVectors(ln_zonedate* date, ln_lnlat_posn* observer, Vector* vector)
@@ -194,6 +203,11 @@ void MainWindow::setSunVectors(ln_zonedate* date, ln_lnlat_posn* observer, Vecto
 
     double a = ln_range_degrees(hpos.az - 180);
     vector->setHeading(a);
+}
+
+void MainWindow::resizeEvent(QResizeEvent *event)
+{
+    mc->resize(event->size());
 }
 
 void MainWindow::addZoomButtons()

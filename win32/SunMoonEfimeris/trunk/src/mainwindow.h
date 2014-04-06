@@ -34,8 +34,6 @@ public:
     ~MainWindow();
     
 private slots:
-    void on_calcButton_clicked();
-
     void on_dateTimeEdit_dateTimeChanged(const QDateTime &date);
 
 private:
@@ -49,8 +47,13 @@ private:
     Vector* sunRise;
     Vector* sunSet;
 
+    void setSunRiseAndSetVectors(const QDateTime &dateTime);
+    void setSunCurrentHeading(const QDateTime &dateTime);
     void addZoomButtons();
     void setSunVectors(ln_zonedate* date, ln_lnlat_posn* observer, Vector* vector);
+
+protected:
+    virtual void resizeEvent ( QResizeEvent * event );
 };
 
 #endif // MAINWINDOW_H
