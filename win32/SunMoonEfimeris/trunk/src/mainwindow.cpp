@@ -229,3 +229,47 @@ void MainWindow::addZoomButtons()
     innerlayout->addWidget(zoomout);
     mc->setLayout(innerlayout);
 }
+
+void MainWindow::on_pushButton_clicked()
+{
+    struct ln_lnlat_posn observer;
+    struct ln_equ_posn equ;
+    struct ln_hrz_posn hpos;
+
+    double JD;
+
+    observer.lat = ui->latEdit->text().toFloat();
+    observer.lng = ui->lngEdit->text().toFloat();
+
+    QDateTime dateTime = ui->dateTimeEdit_2->dateTime();
+
+
+    for (int i = 0; i < 100; ++i) {
+        ln_date lnDate;
+        lnDate.years = dateTime.date().year();
+        lnDate.months = dateTime.date().month();
+        lnDate.days = dateTime.date().day();
+        lnDate.hours = dateTime.time().hour();
+        lnDate.minutes = dateTime.time().minute();
+        lnDate.seconds = dateTime.time().second();
+
+        JD = ln_get_julian_day(&lnDate);
+
+        /* ra, dec */
+        ln_get_solar_equ_coords (JD, &equ);
+        ln_get_hrz_from_equ(&equ, &observer, JD, &hpos);
+
+        ui->tableWidget->insertRow(0);
+        ui->tableWidget->setItem(0,0, new QTableWidgetItem(dateTime.toString()));
+        ui->tableWidget->setItem(0,1, new QTableWidgetItem(QString::number(hpos.az, 'f', 3)));
+
+        dateTime = dateTime.addSecs(3600);
+    }
+}
+
+void MainWindow::on_pushButton_2_clicked()
+{
+    while (ui->tableWidget->rowCount() > 0) {
+        ui->tableWidget->removeRow(0);
+    }
+}
