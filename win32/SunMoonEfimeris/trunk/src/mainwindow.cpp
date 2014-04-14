@@ -232,6 +232,20 @@ void MainWindow::addZoomButtons()
 
 void MainWindow::on_pushButton_clicked()
 {
+    QString fileName = QFileDialog::getSaveFileName(this,
+         tr("Open Image"), "*.csv", tr("Data Files (*.txt *.csv)"));
+
+    if(fileName.isEmpty())
+        return;
+
+    if(QFile::exists(fileName))
+        QFile::remove(fileName);
+
+    QFile file(fileName);
+
+    if(!file.open(QFile::WriteOnly | QFile::Truncate))
+        return;
+
     struct ln_lnlat_posn observer;
     struct ln_equ_posn equ;
     struct ln_hrz_posn hpos;
@@ -242,9 +256,9 @@ void MainWindow::on_pushButton_clicked()
     observer.lng = ui->lngEdit->text().toFloat();
 
     QDateTime dateTime = ui->dateTimeEdit_2->dateTime();
+    QTextStream ts(&file);
 
-
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 1000; ++i) {
         ln_date lnDate;
         lnDate.years = dateTime.date().year();
         lnDate.months = dateTime.date().month();
@@ -259,12 +273,20 @@ void MainWindow::on_pushButton_clicked()
         ln_get_solar_equ_coords (JD, &equ);
         ln_get_hrz_from_equ(&equ, &observer, JD, &hpos);
 
-        ui->tableWidget->insertRow(0);
-        ui->tableWidget->setItem(0,0, new QTableWidgetItem(dateTime.toString()));
-        ui->tableWidget->setItem(0,1, new QTableWidgetItem(QString::number(hpos.az, 'f', 3)));
+        ui->tableWidget->insertRow(i);
+        ui->tableWidget->setItem(i,0, new QTableWidgetItem(dateTime.toString()));
+        ui->tableWidget->setItem(i,1, new QTableWidgetItem(QString::number(hpos.az, 'f', 3)));
 
-        dateTime = dateTime.addSecs(3600);
+        //QStringList sl;
+
+        ts << dateTime.toString() << ";" << QString::number(hpos.az, 'f', 3) << "\r\n";
+
+        dateTime = dateTime.addSecs(600);
     }
+
+    file.close();
+
+
 }
 
 void MainWindow::on_pushButton_2_clicked()
