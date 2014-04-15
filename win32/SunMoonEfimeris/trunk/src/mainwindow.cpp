@@ -77,6 +77,7 @@ MainWindow::~MainWindow()
 void MainWindow::on_dateTimeEdit_dateTimeChanged(const QDateTime &date)
 {
     setSunCurrentHeading(date);
+    setSunRiseAndSetVectors(date);
 }
 
 void MainWindow::setSunRiseAndSetVectors(const QDateTime &dateTime)
@@ -274,12 +275,13 @@ void MainWindow::on_pushButton_clicked()
         ln_get_hrz_from_equ(&equ, &observer, JD, &hpos);
 
         ui->tableWidget->insertRow(i);
-        ui->tableWidget->setItem(i,0, new QTableWidgetItem(dateTime.toString()));
+        ui->tableWidget->setItem(i,0, new QTableWidgetItem(dateTime.toString("yyyy-MM-dd hh:mm")));
         ui->tableWidget->setItem(i,1, new QTableWidgetItem(QString::number(hpos.az, 'f', 3)));
+        ui->tableWidget->setItem(i,2, new QTableWidgetItem(QString::number(hpos.alt, 'f', 3)));
 
         //QStringList sl;
 
-        ts << dateTime.toString() << ";" << QString::number(hpos.az, 'f', 3) << "\r\n";
+        ts << dateTime.toString() << ";" << QString::number(hpos.az, 'f', 3) << ";" << QString::number(hpos.alt, 'f', 3) << "\r\n";
 
         dateTime = dateTime.addSecs(600);
     }
