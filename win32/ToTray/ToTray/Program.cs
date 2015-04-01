@@ -13,15 +13,53 @@ namespace ToTray {
 		/// </summary>
 		[STAThread]
 		static void Main() {
+
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
-			Application.Run(new ToTryHandler());
+
+			IntPtr handle = IntPtr.Zero;
+
+			if (!string.IsNullOrEmpty(Environment.CommandLine)) {
+				List<string> parameters = new List<string>();				
+				foreach (var item in Environment.CommandLine.Split((char)34)) {
+					if (item.Length > 1) {
+						parameters.Add(item);
+					}
+				}
+				
+				if (parameters.Count > 1) {
+					string appPath = parameters[1];
+					var app = appPath.Split((char)39);
+					Process process;
+					if(app.Length >= 2) {
+						process = Process.Start(app[0], app[1]);
+					} else {
+						process = Process.Start(appPath);
+					}
+					process.WaitForInputIdle();
+					
+					handle = process.MainWindowHandle;
+					if (parameters.Count > 3) {
+						System.Threading.Thread.Sleep(Int32.Parse(parameters[2].Trim()));
+						for(int i = 0; i < 10; i++) {
+							IntPtr p = UnsaveNativeMethods.FindWindow(parameters[3], null);
+							if (p != IntPtr.Zero) {
+								handle = p;
+								break;
+							}
+							System.Threading.Thread.Sleep(500);
+						}
+					}
+				}
+			}
+
+			Application.Run(new ToTryHandler(handle));
 		}
 	}
 
 	public class ToTryHandler : ApplicationContext {
 
-		public ToTryHandler() {
+		public ToTryHandler(IntPtr handle) {
 			this.notifyIcon = new NotifyIcon();
 			this.notifyIcon.Icon = Properties.Resources.Icon;
 			this.notifyIcon.ContextMenuStrip = new ContextMenuStrip();
@@ -34,14 +72,22 @@ namespace ToTray {
 			this.localWindowsHook = new LocalWindowsHook(HookType.WH_KEYBOARD_LL);
 			this.localWindowsHook.HookInvoked += handleHookInvoked;
 			this.localWindowsHook.Install();
+
+			populateContextMenu();
+
+			if (!(handle == IntPtr.Zero)) {
+				this.processWrapper = new ProcessWrapper();
+				this.processWrapper.Handle = handle;				
+				this.processWrapper.ToggleTaskbarButton();
+				this.processWrapper.ToggleVisibility();
+				setIcon(true);
+				this.trackBarHost.Visible = true;
+			}
 		}
-
-
 
 		protected override void Dispose(bool disposing) {
 			base.Dispose(disposing);
 		}
-
 
 		void handleCloseButtonClick(object sender, EventArgs e) {
 			this.notifyIcon.Visible = false;
@@ -94,7 +140,7 @@ namespace ToTray {
 		}
 
 		void handleTransparencyValueChanged(object sender, EventArgs e) {
-			var pw = this.combo.SelectedItem as ProcessWrapper;
+			var pw = this.processWrapper; //this.combo.SelectedItem as ProcessWrapper;
 			if (pw != null) {
 				UnsaveNativeMethods.SetWindowLong(
 					pw.Handle,
@@ -158,14 +204,14 @@ namespace ToTray {
 			this.notifyIcon.ContextMenuStrip.Items.Add(button);
 
 			this.notifyIcon.ContextMenuStrip.Items.Add(new ToolStripSeparator());
-			button = new ToolStripButton("Close");
-			button.Click += handleCloseButtonClick;
-			this.notifyIcon.ContextMenuStrip.Items.Add(button);
-
-			this.notifyIcon.ContextMenuStrip.Items.Add(new ToolStripSeparator());
 			button = new ToolStripButton("Show In Taskbar");
 			button.Click += handleShowInTaskBarButtonClick;
 			this.notifyIcon.ContextMenuStrip.Items.Add(button);
+
+			this.notifyIcon.ContextMenuStrip.Items.Add(new ToolStripSeparator());
+			button = new ToolStripButton("Close");
+			button.Click += handleCloseButtonClick;
+			this.notifyIcon.ContextMenuStrip.Items.Add(button);			
 		}
 
 		private void setIcon(bool full) {
@@ -186,7 +232,7 @@ namespace ToTray {
 
 		private void toggleCurrentProcessVisibility() {
 			if (this.processWrapper != null) {
-				this.processWrapper.Toggle();				
+				this.processWrapper.ToggleVisibility();				
 				setIcon(this.processWrapper.WindowVisible);
 			}
 		}	
@@ -252,7 +298,7 @@ namespace ToTray {
 			UnsaveNativeMethods.ShowWindow(Handle, 1);
 		}
 
-		public void Toggle() {
+		public void ToggleVisibility() {
 			if (Handle != null) {
 				UnsaveNativeMethods.ShowWindow(
 					Handle, WindowVisible ? 0 : 1
