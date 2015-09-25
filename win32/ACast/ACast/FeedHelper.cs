@@ -23,6 +23,7 @@ namespace ACast
     public delegate void FeedDeserializeCompletedHandler();
     public delegate void AddFeedCompletedHandler();
     public delegate void FeedListLoadedHandler();
+    public delegate void FeedListDeletedHandler();
     
     public class FeedHelper
     {
@@ -36,6 +37,7 @@ namespace ACast
         public FeedDeserializeCompletedHandler FeedDeserializeCompletedAsync;
         public AddFeedCompletedHandler AddFeedCompletedAsync;
         public FeedListLoadedHandler FeedListLoadedAsync;
+        public FeedListDeletedHandler FeedListDeletedAsync;
         
         public static FeedHelper Instance = new FeedHelper();
 
@@ -50,7 +52,7 @@ namespace ACast
             get { return feedList; }
         }
 
-        public async void LoadFeedList()
+        public async void LoadFeedListAsync()
         {
             if (await FileExtensions.FileExist2(ApplicationData.Current.LocalFolder, "FeedList.dat"))
             {
@@ -58,12 +60,32 @@ namespace ACast
 
                 var deserializeStream = await file.OpenStreamForReadAsync();
                 XmlSerializer deserializer = new XmlSerializer(typeof(List<FeedInfoItem>));
-                feedList = (List<FeedInfoItem>)deserializer.Deserialize(deserializeStream);                
+                feedList = (List<FeedInfoItem>)deserializer.Deserialize(deserializeStream);
+                deserializeStream.Dispose();
             }
 
             if (FeedListLoadedAsync != null)
             {
                 FeedListLoadedAsync();
+            }
+        }
+
+        public async void DeleteFeedList()
+        {
+            if (await FileExtensions.FileExist2(ApplicationData.Current.LocalFolder, "FeedList.dat"))
+            {
+                StorageFile file = await ApplicationData.Current.LocalFolder.GetFileAsync("FeedList.dat");
+
+                await file.DeleteAsync();
+
+                // TODO: delete feed files
+
+                feedList.Clear();
+            }
+
+            if (FeedListDeletedAsync != null)
+            {
+                FeedListDeletedAsync();
             }
         }
 
@@ -92,7 +114,7 @@ namespace ACast
                     if (feed.ImageUri != null)
                     {
                         feedInfo.ImageUri = ApplicationData.Current.LocalFolder.Path + "\\" + feedInfo.FileName + ".img";
-                        DownloadFile(feed.ImageUri.ToString(), ApplicationData.Current.LocalFolder, feedInfo.FileName + ".img");
+                        await DownloadFile(feed.ImageUri.ToString(), ApplicationData.Current.LocalFolder, feedInfo.FileName + ".img");
                     }
 
                     feedList.Add(feedInfo);
@@ -100,6 +122,8 @@ namespace ACast
                     var serializeStream = await ApplicationData.Current.LocalFolder.OpenStreamForWriteAsync("FeedList.dat", CreationCollisionOption.ReplaceExisting);
                     XmlSerializer serializer = new XmlSerializer(typeof(List<FeedInfoItem>));
                     serializer.Serialize(serializeStream, feedList);
+                    serializeStream.Flush();
+                    serializeStream.Dispose();
                 }
                 catch /*(Exception)*/
                 {
@@ -127,7 +151,7 @@ namespace ACast
             await DeserializeFeed(feed, infoItem.FileName);
         }
 
-        public async void DownloadFile(string uri, StorageFolder folder, string fileName)
+        public async Task DownloadFile(string uri, StorageFolder folder, string fileName)
         {
 
             StorageFile destinationFile;

@@ -7,6 +7,12 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Page.BottomAppBar>
+        <CommandBar>
+            <AppBarButton x:Name="addFeedButton" Icon="Add" Label="appbarbutton" Click="addFeedButton_Click"/>
+            <AppBarButton x:Name="clearButton" Icon="Remove" Label="appbarbutton" Click="clearButton_Click" />
+        </CommandBar>
+    </Page.BottomAppBar>
 
     <Grid>
         <ProgressBar x:Name="progressBar" Height="46" Margin="29,37,44,557"/>

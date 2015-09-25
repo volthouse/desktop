@@ -35,10 +35,13 @@ namespace ACast
     {        
         private ApplicationDataContainer localSettings = null;
         private SyndicationFeed feed;
+        private SynchronizationContext context;
 
         public MainPage()
         {
             this.InitializeComponent();
+
+            context = SynchronizationContext.Current;
 
             this.NavigationCacheMode = NavigationCacheMode.Required;
 
@@ -47,18 +50,7 @@ namespace ACast
             feed = new SyndicationFeed();
 
             FeedHelper.Instance.FeedListLoadedAsync += FeedListLoadedAsync;
-            FeedHelper.Instance.LoadFeedList();
-
-            //List<FeedInfoItem> t = new List<FeedInfoItem>();
-
-            //t.Add(new FeedInfoItem() { FileName = "1" });
-            //t.Add(new FeedInfoItem() { FileName = "2" });
-            //t.Add(new FeedInfoItem() { FileName = "3" });
-
-            //MemoryStream ms = new MemoryStream();
-
-            //XmlSerializer s = new XmlSerializer(typeof(List<FeedInfoItem>));
-            //s.Serialize(ms, t);
+            FeedHelper.Instance.LoadFeedListAsync();        
  
         }
 
@@ -86,17 +78,30 @@ namespace ACast
             //FeedHelper.Instance.AddFeed("http://www.cczwei.de/rss_issues_all.php");
 
 
-            //FeedHelper.Instance.LoadFeed(0, feed);
+            FeedHelper.Instance.FeedListLoadedAsync += FeedListLoadedAsync;
 
-            var ignored = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-            {
+            //var ignored = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            //{
+            //    listView.Items.Clear();
+
+            //    foreach (var item in FeedHelper.Instance.FeedList)
+            //    {
+            //        CustomListItem customItem = new CustomListItem();
+            //        customItem.SetItem(item);
+            //        listView.Items.Add(customItem);
+            //    }
+            //});
+
+            context.Post(new SendOrPostCallback((o) => {
+                listView.Items.Clear();
+
                 foreach (var item in FeedHelper.Instance.FeedList)
                 {
                     CustomListItem customItem = new CustomListItem();
                     customItem.SetItem(item);
                     listView.Items.Add(customItem);
                 }
-            });
+            }), null);
         }           
 
         /// <summary>
@@ -118,8 +123,27 @@ namespace ACast
         private void listView_ItemClick(object sender, ItemClickEventArgs e)
         {
             int i = listView.Items.IndexOf(e.ClickedItem);
-            this.Frame.Navigate(typeof(FeedDetailsPage), i);
+            Frame.Navigate(typeof(FeedDetailsPage), i);
         }
 
+        private async void addFeedButton_Click(object sender, RoutedEventArgs e)
+        {
+            var newFeedUrlDlg = new FeedUrlDialog();
+            await newFeedUrlDlg.ShowAsync();
+
+            FeedHelper.Instance.LoadFeedListAsync();
+        }
+
+        private void clearButton_Click(object sender, RoutedEventArgs e)
+        {
+            FeedHelper.Instance.FeedListDeletedAsync += FeedListDeletedAsync;
+            FeedHelper.Instance.DeleteFeedList();
+        }
+
+        private void FeedListDeletedAsync()
+        {
+            FeedHelper.Instance.FeedListDeletedAsync -= FeedListDeletedAsync;
+            FeedHelper.Instance.LoadFeedListAsync();
+        }
     }
 }
