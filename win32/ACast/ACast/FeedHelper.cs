@@ -392,6 +392,28 @@ namespace ACast
         }
     }
 
+    public enum SyndicationItemState
+    {
+        None,
+        Downloaded,
+        Playing,
+        Paused,
+        Played
+    }
+
+    public class SyndicationInfoItem
+    {
+        public string Uri;
+        public string FileName;
+        public string Text;
+        public SyndicationItemState State;
+
+        public override string ToString()
+        {
+            return Text;
+        }
+    }
+
     public static class FileExtensions
     {
         public static async Task<bool> FileExists(this StorageFolder folder, string fileName)
