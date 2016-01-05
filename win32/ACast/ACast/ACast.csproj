@@ -80,6 +80,9 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
+    <SDKReference Include="Microsoft.Advertising.Mobile.Display, Version=8.1">
+      <Name>Microsoft.Advertising.Mobile.Display</Name>
+    </SDKReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.xaml.cs">
@@ -87,6 +90,9 @@
     </Compile>
     <Compile Include="CustomListItem.xaml.cs">
       <DependentUpon>CustomListItem.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="FeedDetailsListItem.xaml.cs">
+      <DependentUpon>FeedDetailsListItem.xaml</DependentUpon>
     </Compile>
     <Compile Include="FeedDetailsPage.xaml.cs">
       <DependentUpon>FeedDetailsPage.xaml</DependentUpon>
@@ -122,6 +128,10 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Page Include="CustomListItem.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="FeedDetailsListItem.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

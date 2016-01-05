@@ -24,19 +24,22 @@ namespace ACast
     /// </summary>
     public sealed partial class FeedDetailsPage : Page
     {
-        private SyndicationFeed feed;
-
+        private int feedIdx;
+      
         public FeedDetailsPage()
         {
             this.InitializeComponent();
 
             HardwareButtons.BackPressed += HardwareButtons_BackPressed;
-
-            FeedHelper.Instance.FeedDeserializeCompletedAsync += FeedDeserializeCompletedAsync;
+            FeedHelper.Instance.FeedActivatedAsync += FeedActivatedAsync;
         }
 
         private void HardwareButtons_BackPressed(object sender, BackPressedEventArgs e)
         {
+            HardwareButtons.BackPressed -= HardwareButtons_BackPressed;
+            FeedHelper.Instance.FeedActivatedAsync -= FeedActivatedAsync;
+            FeedHelper.Instance.DeactiveCurrentFeed();
+
             Frame rootFrame = Window.Current.Content as Frame;
 
             if (rootFrame != null && rootFrame.CanGoBack)
@@ -46,11 +49,22 @@ namespace ACast
             }
         }
 
-        private void FeedDeserializeCompletedAsync()
+        private void FeedActivatedAsync()
         {
-            foreach (var item in feed.Items)
+            foreach (var item in FeedHelper.Instance.CurrentFeedItems)
             {
-                listView.Items.Add(item.Title.Text);
+                FeedDetailsListItem detailsItem = new FeedDetailsListItem(item);
+                listView.Items.Add(detailsItem);
+                detailsItem.StartDownloadClick += StartDownloadClick;
+            }
+        }
+
+        private void StartDownloadClick(object sender, EventArgs args)
+        {
+            FeedDetailsListItem item = sender as FeedDetailsListItem;
+            if (item != null)
+            {
+                FeedHelper.Instance.StartDownloadMedia(item.FeedItem);
             }
         }
 
@@ -61,8 +75,8 @@ namespace ACast
         /// This parameter is typically used to configure the page.</param>
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
-            feed = new SyndicationFeed();
-            FeedHelper.Instance.LoadFeed((int)e.Parameter, feed);            
+            feedIdx = (int)e.Parameter;
+            FeedHelper.Instance.ActiveFeedAsync(feedIdx);
         }        
     }
 }

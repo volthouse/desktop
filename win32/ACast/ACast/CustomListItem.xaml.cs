@@ -31,7 +31,7 @@ namespace ACast
             textBox.Text = text;
         }
 
-        public void SetItem(FeedInfoItem item)
+        public void SetItem(Feed item)
         {
             textBox.Text = item.Uri;
 

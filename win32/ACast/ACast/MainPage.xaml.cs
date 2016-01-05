@@ -34,7 +34,6 @@ namespace ACast
     public sealed partial class MainPage : Page
     {        
         private ApplicationDataContainer localSettings = null;
-        private SyndicationFeed feed;
         private SynchronizationContext context;
 
         public MainPage()
@@ -47,10 +46,8 @@ namespace ACast
 
             localSettings = ApplicationData.Current.LocalSettings;
 
-            feed = new SyndicationFeed();
-
             FeedHelper.Instance.FeedListLoadedAsync += FeedListLoadedAsync;
-            FeedHelper.Instance.LoadFeedListAsync();        
+            FeedHelper.Instance.LoadFeedListAsync();
  
         }
 
@@ -73,24 +70,7 @@ namespace ACast
        
         private void FeedListLoadedAsync()
         {
-            //FeedHelper.Instance.AddFeed("http://rss.golem.de/rss.php?feed=ATOM1.0");
-            //FeedHelper.Instance.AddFeed("http://heise.de.feedsportal.com/c/35207/f/653902/index.rss");
-            //FeedHelper.Instance.AddFeed("http://www.cczwei.de/rss_issues_all.php");
-
-
             FeedHelper.Instance.FeedListLoadedAsync += FeedListLoadedAsync;
-
-            //var ignored = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-            //{
-            //    listView.Items.Clear();
-
-            //    foreach (var item in FeedHelper.Instance.FeedList)
-            //    {
-            //        CustomListItem customItem = new CustomListItem();
-            //        customItem.SetItem(item);
-            //        listView.Items.Add(customItem);
-            //    }
-            //});
 
             context.Post(new SendOrPostCallback((o) => {
                 listView.Items.Clear();

@@ -23,13 +23,17 @@ namespace ACast
     public delegate void FeedDeserializeCompletedHandler();
     public delegate void AddFeedCompletedHandler();
     public delegate void FeedListLoadedHandler();
+    public delegate void FeedActivatedHandler();
     public delegate void FeedListDeletedHandler();
     
     public class FeedHelper
     {
-        private List<DownloadOperation> activeDownloads;
         private CancellationTokenSource cts;
-        private List<FeedInfoItem> feedList = new List<FeedInfoItem>();
+
+        private List<DownloadOperation> activeDownloads;
+        private List<FeedDownload> activeFeedItemDownloads;
+        
+        private List<Feed> feedList = new List<Feed>();
                 
         public DownloadProgressHandler DownloadProgressAsync;
         public DownloadCompletedHandler DownloadCompletedAsync;
@@ -37,19 +41,48 @@ namespace ACast
         public FeedDeserializeCompletedHandler FeedDeserializeCompletedAsync;
         public AddFeedCompletedHandler AddFeedCompletedAsync;
         public FeedListLoadedHandler FeedListLoadedAsync;
+        public FeedActivatedHandler FeedActivatedAsync;
         public FeedListDeletedHandler FeedListDeletedAsync;
         
         public static FeedHelper Instance = new FeedHelper();
+
+        public List<FeedItem> CurrentFeedItems;
+        public Feed CurrentFeed;
 
         public FeedHelper()
         {
             activeDownloads = new List<DownloadOperation>();
             cts = new CancellationTokenSource();
+
+            CurrentFeed = new Feed();
+            CurrentFeedItems = new List<FeedItem>();
         }
 
-        public IReadOnlyList<FeedInfoItem> FeedList
+        public IReadOnlyList<Feed> FeedList
         {
             get { return feedList; }
+        }
+
+        public async void ActiveFeedAsync(int feedIdx)
+        {
+            CurrentFeed = feedList[feedIdx];
+            CurrentFeedItems = await LoadFeedItemsAsync(CurrentFeed.ItemsFilename);
+
+            if (FeedActivatedAsync != null)
+            {
+                FeedActivatedAsync();
+            }
+        }
+
+        public void DeactiveCurrentFeed()
+        {
+            if (!string.IsNullOrEmpty(CurrentFeed.ItemsFilename))
+            {
+                SerializeFeedItems(CurrentFeed.ItemsFilename, CurrentFeedItems);
+            }            
+
+            CurrentFeed = new Feed();
+            CurrentFeedItems = new List<FeedItem>();           
         }
 
         public async void LoadFeedListAsync()
@@ -59,8 +92,8 @@ namespace ACast
                 StorageFile file = await ApplicationData.Current.LocalFolder.GetFileAsync("FeedList.dat");
 
                 var deserializeStream = await file.OpenStreamForReadAsync();
-                XmlSerializer deserializer = new XmlSerializer(typeof(List<FeedInfoItem>));
-                feedList = (List<FeedInfoItem>)deserializer.Deserialize(deserializeStream);
+                XmlSerializer deserializer = new XmlSerializer(typeof(List<Feed>));
+                feedList = (List<Feed>)deserializer.Deserialize(deserializeStream);
                 deserializeStream.Dispose();
             }
 
@@ -68,6 +101,23 @@ namespace ACast
             {
                 FeedListLoadedAsync();
             }
+        }
+
+        public async Task<List<FeedItem>> LoadFeedItemsAsync(string fileName)
+        {
+            List<FeedItem> feedItems = new List<FeedItem>();
+
+            if (await FileExtensions.FileExist2(ApplicationData.Current.LocalFolder, fileName))
+            {
+                StorageFile file = await ApplicationData.Current.LocalFolder.GetFileAsync(fileName);
+
+                var deserializeStream = await file.OpenStreamForReadAsync();
+                XmlSerializer deserializer = new XmlSerializer(typeof(List<FeedItem>));
+                feedItems = (List<FeedItem>)deserializer.Deserialize(deserializeStream);
+                deserializeStream.Dispose();
+            }
+
+            return feedItems;
         }
 
         public async void DeleteFeedList()
@@ -105,25 +155,21 @@ namespace ACast
 
                 try
                 {
-                    FeedInfoItem feedInfo = new FeedInfoItem() { Uri = uri.ToString(), FileName = Guid.NewGuid().ToString() };
+                    string newId = Guid.NewGuid().ToString();
+                    Feed feed = new Feed() { Id = newId, Uri = uri.ToString(), FileName = newId + ".dat", ItemsFilename = newId + "_items.dat" };
 
-                    SyndicationFeed feed = new SyndicationFeed();
+                    SyndicationFeed sfeed = new SyndicationFeed();
                     await UpdateFeedAsync(uri.ToString(), feed);
-                    await SerializeFeedAsync(feed, feedInfo.FileName);
 
                     if (feed.ImageUri != null)
                     {
-                        feedInfo.ImageUri = ApplicationData.Current.LocalFolder.Path + "\\" + feedInfo.FileName + ".img";
-                        await DownloadFile(feed.ImageUri.ToString(), ApplicationData.Current.LocalFolder, feedInfo.FileName + ".img");
+                        //feed.ImageUri = ApplicationData.Current.LocalFolder.Path + "\\" + feed.FileName + ".img";
+                        await DownloadFile(feed.ImageUri.ToString(), ApplicationData.Current.LocalFolder, feed.FileName + ".img");
                     }
 
-                    feedList.Add(feedInfo);
+                    feedList.Add(feed);
 
-                    var serializeStream = await ApplicationData.Current.LocalFolder.OpenStreamForWriteAsync("FeedList.dat", CreationCollisionOption.ReplaceExisting);
-                    XmlSerializer serializer = new XmlSerializer(typeof(List<FeedInfoItem>));
-                    serializer.Serialize(serializeStream, feedList);
-                    serializeStream.Flush();
-                    serializeStream.Dispose();
+                    SerializeFeedList();
                 }
                 catch /*(Exception)*/
                 {
@@ -139,6 +185,42 @@ namespace ACast
             }
         }
 
+        public async void SerializeFeedList()
+        {
+
+            try
+            {
+                var serializeStream = await ApplicationData.Current.LocalFolder.OpenStreamForWriteAsync("FeedList.dat", CreationCollisionOption.ReplaceExisting);
+                XmlSerializer serializer = new XmlSerializer(typeof(List<Feed>));
+                serializer.Serialize(serializeStream, feedList);
+                serializeStream.Flush();
+                serializeStream.Dispose();
+            }
+            catch /*(Exception)*/
+            {
+
+                //throw;
+            }          
+        }
+
+        public async void SerializeFeedItems(string fileName, List<FeedItem> items)
+        {
+
+            try
+            {
+                var serializeStream = await ApplicationData.Current.LocalFolder.OpenStreamForWriteAsync(fileName, CreationCollisionOption.ReplaceExisting);
+                XmlSerializer serializer = new XmlSerializer(typeof(List<FeedItem>));
+                serializer.Serialize(serializeStream, items);
+                serializeStream.Flush();
+                serializeStream.Dispose();
+            }
+            catch /*(Exception)*/
+            {
+
+                //throw;
+            }
+        }
+
         public async void LoadFeed(int i, SyndicationFeed feed)
         {
             if (feedList.Count == 0)
@@ -146,9 +228,13 @@ namespace ACast
                 return;
             }
 
-            FeedInfoItem infoItem = feedList[i];
+            Feed infoItem = feedList[i];
 
             await DeserializeFeed(feed, infoItem.FileName);
+        }
+
+        public async void StartDownloadMedia(FeedItem feedItem) {
+            await DownloadFile(feedItem.FileName, ApplicationData.Current.LocalFolder, feedItem.FileName);
         }
 
         public async Task DownloadFile(string uri, StorageFolder folder, string fileName)
@@ -157,10 +243,9 @@ namespace ACast
             StorageFile destinationFile;
             try
             {
-                destinationFile = await folder.CreateFileAsync(
-                    fileName, CreationCollisionOption.GenerateUniqueName);
+                destinationFile = await folder.CreateFileAsync(fileName, CreationCollisionOption.GenerateUniqueName);
             }
-            catch (FileNotFoundException ex)
+            catch /*(FileNotFoundException ex)*/
             {
                 //rootPage.NotifyUser("Error while creating file: " + ex.Message, NotifyType.ErrorMessage);
                 return;
@@ -172,7 +257,8 @@ namespace ACast
             await HandleDownloadAsync(download, true);
         }
 
-        public async Task UpdateFeedAsync(string stringUri, SyndicationFeed feed)
+
+        public async Task UpdateFeedAsync(string stringUri, Feed feed)
         {
             SyndicationClient client = new SyndicationClient();
 
@@ -183,26 +269,24 @@ namespace ACast
             client.SetRequestHeader("User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)");
 
 
-            SyndicationFeed currentFeed = await client.RetrieveFeedAsync(new Uri(stringUri));
+            SyndicationFeed syndicationFeed = await client.RetrieveFeedAsync(new Uri(stringUri));
 
-            var lastItems = from item in feed.Items orderby item.PublishedDate descending select item;
+            feed.Uri = stringUri;
+            feed.ImageUri = syndicationFeed.ImageUri.ToString();
+                        
+            var newSyndicationItems = from item in syndicationFeed.Items where item.PublishedDate > feed.LastUpdateDate select item;
 
-            var lastItem = lastItems.FirstOrDefault();
 
-            if (lastItem != null)
+            List<FeedItem> feedItems = await LoadFeedItemsAsync(feed.ItemsFilename);
+
+            foreach (var syndicationItem in newSyndicationItems)
             {
-                var newItems = from item in currentFeed.Items where item.PublishedDate > lastItem.PublishedDate select item;
+                feedItems.Add(new FeedItem(syndicationItem));
+            }
 
-                foreach (var item in newItems)
-                {
-                    feed.Items.Add(item);
-                }
-            }
-            else
-            {
-                feed.LoadFromXml(currentFeed.GetXmlDocument(currentFeed.SourceFormat));
-            }
-            
+            SerializeFeedItems(feed.ItemsFilename, feedItems);
+
+            feed.LastUpdateDate = DateTimeOffset.Now;
 
             if (FeedUpdateCompletedAsync != null)
             {
@@ -240,9 +324,7 @@ namespace ACast
                     FeedDeserializeCompletedAsync();
                 }
             }   
-        }
-
-        
+        }              
                 
         private async Task HandleDownloadAsync(DownloadOperation download, bool start)
         {
@@ -380,11 +462,14 @@ namespace ACast
         ErrorMessage
     };
 
-    public class FeedInfoItem
-    {        
+    public class Feed
+    {
+        public string Id;
         public string Uri;
         public string FileName;
         public string ImageUri;
+        public string ItemsFilename;
+        public DateTimeOffset LastUpdateDate;
 
         public override string ToString()
         {
@@ -392,26 +477,37 @@ namespace ACast
         }
     }
 
-    public enum SyndicationItemState
+    public enum FeedState
     {
         None,
-        Downloaded,
-        Playing,
-        Paused,
-        Played
+        DownloadStarted,
+        DownloadCompleted
     }
 
-    public class SyndicationInfoItem
+    public class FeedItem
     {
-        public string Uri;
-        public string FileName;
-        public string Text;
-        public SyndicationItemState State;
+        public FeedItem() {  }
 
-        public override string ToString()
+        public FeedItem(SyndicationItem item)
         {
-            return Text;
+            Id = item.Id;
+            Title = item.Title.Text;
+            Summary = item.Summary.Text;
+            PublishedDate = item.PublishedDate;
         }
+
+        public string Id;
+        public string FileName;
+        public FeedState MediaState;
+        public string Title;
+        public string Summary;
+        public DateTimeOffset PublishedDate;
+    }
+
+    public class FeedDownload
+    {
+        public string ItemsFilename;
+        public int ItemIdx;
     }
 
     public static class FileExtensions
