@@ -9,14 +9,21 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
     <Page.BottomAppBar>
         <CommandBar>
-            <AppBarButton x:Name="addFeedButton" Icon="Add" Label="appbarbutton" Click="addFeedButton_Click"/>
-            <AppBarButton x:Name="clearButton" Icon="Remove" Label="appbarbutton" Click="clearButton_Click" />
+            <AppBarButton x:Name="addFeedButton" Icon="Add" Label="Add Feed" Click="addFeedButton_Click"/>
+            <AppBarButton x:Name="clearButton" Icon="Remove" Label="Remove" Click="clearButton_Click" />
+            <AppBarButton x:Name="rewindButton" Icon="Back" Label="Rewind"/>
+            <AppBarButton x:Name="playButton" Icon="Play" Label="Play"/>
         </CommandBar>
     </Page.BottomAppBar>
 
     <Grid>
-        <ProgressBar x:Name="progressBar" Height="46" Margin="29,37,44,557"/>
-        <ListView x:Name="listView" HorizontalAlignment="Left" Height="506" Margin="39,102,0,0" VerticalAlignment="Top" Width="317" IsItemClickEnabled="True" ItemClick="listView_ItemClick"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="107*"/>
+            <ColumnDefinition Width="293*"/>
+        </Grid.ColumnDefinitions>
+        <ListView x:Name="feedListView" IsItemClickEnabled="True" Margin="0,0,5,0"/>
+        <ListView x:Name="feedItemsListView" IsItemClickEnabled="True" Grid.Column="1"/>
+
 
     </Grid>
 </Page>

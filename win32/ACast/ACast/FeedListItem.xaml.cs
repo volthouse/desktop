@@ -19,12 +19,26 @@ using Windows.UI.Xaml.Navigation;
 
 namespace ACast
 {
-    public sealed partial class CustomListItem : UserControl 
+    public sealed partial class FeedListItem : UserControl 
     {
-        public CustomListItem()
+        //private DispatcherTimer timer;
+
+        public FeedListItem()
         {
-            this.InitializeComponent();            
+            this.InitializeComponent();
+            //timer = new DispatcherTimer();
+            //timer.Tick += timer_Tick;
+            //timer.Interval = new TimeSpan(0, 0, 1);
+            //timer.Start();
         }
+
+        //void timer_Tick(object sender, object e)
+        //{
+        //    //PlaneProjection p = new PlaneProjection();
+        //    //p.LocalOffsetX = 100;
+        //    //image.Projection = new PlaneProjection();
+        //    //image.Projection.Dispatcher.
+        //}
 
         public void SetText(string text)
         {
@@ -33,7 +47,7 @@ namespace ACast
 
         public void SetItem(Feed item)
         {
-            textBox.Text = item.Uri;
+            textBox.Text = item.Title;
 
             image.Source = new BitmapImage(new Uri(item.ImageUri));
         }

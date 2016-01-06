@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.UI.Xaml;
@@ -19,26 +20,63 @@ namespace ACast
 {
     public sealed partial class FeedDetailsListItem : UserControl
     {
+        private SynchronizationContext context;
+
         public FeedItem FeedItem { get; private set; }
 
-        public EventHandler StartDownloadClick;        
 
         public FeedDetailsListItem(FeedItem feedItem)
         {
             this.InitializeComponent();
+
+            context = SynchronizationContext.Current;
+
             FeedItem = feedItem;
             textBox.Text = feedItem.Title;
-            pickButton.Icon = new SymbolIcon(feedItem.MediaState == FeedState.None ? Symbol.Pin : Symbol.UnPin);
+            pickButton.Icon = new SymbolIcon(FeedItem.DownloadState == FeedDownloadState.None ? Symbol.Pin : Symbol.UnPin);
+            playButton.Visibility = FeedItem.DownloadState == FeedDownloadState.DownloadCompleted ? Visibility.Visible : Visibility.Collapsed;
+
+            FeedItem.StateChanged += stateChanged;
+            feedItem.DownloadProgressChanged += progressChanged;
         }
 
         private void pickButton_Click(object sender, RoutedEventArgs e)
         {
-            if (StartDownloadClick != null)
+            switch (FeedItem.DownloadState)
             {
-                FeedItem.MediaState = FeedState.DownloadStarted;
-                pickButton.Icon = new SymbolIcon(Symbol.UnPin);
-                StartDownloadClick(this, EventArgs.Empty);
+                case FeedDownloadState.None:
+                    FeedManager.Instance.StartDownloadMedia(FeedItem);
+                    pickButton.Icon = new SymbolIcon(Symbol.UnPin);
+                    break;
+                case FeedDownloadState.DownloadStarted:
+                    break;
+                case FeedDownloadState.DownloadCompleted:
+                    break;
+                default:
+                    break;
             }
+        }
+
+        private void stateChanged(object sender, EventArgs args)
+        {
+            context.Post(new SendOrPostCallback((o) =>
+            {
+                pickButton.Icon = new SymbolIcon(FeedItem.DownloadState == FeedDownloadState.None ? Symbol.Pin : Symbol.UnPin);
+                playButton.Visibility = FeedItem.DownloadState == FeedDownloadState.DownloadCompleted ? Visibility.Visible : Visibility.Collapsed;
+            }), null);
+        }
+
+        private void progressChanged(object sender, float progress)
+        {
+            context.Post(new SendOrPostCallback((o) =>
+            {
+                pickButton.Label = progress.ToString("#") + "%";
+            }), null);
+        }
+
+        private void playButton_Click(object sender, RoutedEventArgs e)
+        {
+            FeedManager.Instance.Play(FeedItem);
         }
         
     }

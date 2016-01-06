@@ -88,16 +88,13 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
-    <Compile Include="CustomListItem.xaml.cs">
-      <DependentUpon>CustomListItem.xaml</DependentUpon>
+    <Compile Include="FeedListItem.xaml.cs">
+      <DependentUpon>FeedListItem.xaml</DependentUpon>
     </Compile>
     <Compile Include="FeedDetailsListItem.xaml.cs">
       <DependentUpon>FeedDetailsListItem.xaml</DependentUpon>
     </Compile>
-    <Compile Include="FeedDetailsPage.xaml.cs">
-      <DependentUpon>FeedDetailsPage.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="FeedHelper.cs" />
+    <Compile Include="FeedManager.cs" />
     <Compile Include="FeedUrlDialog.xaml.cs">
       <DependentUpon>FeedUrlDialog.xaml</DependentUpon>
     </Compile>
@@ -127,15 +124,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Page Include="CustomListItem.xaml">
+    <Page Include="FeedListItem.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="FeedDetailsListItem.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="FeedDetailsPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -144,8 +137,8 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="MainPage.xaml">
-      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Player.xaml">
       <SubType>Designer</SubType>

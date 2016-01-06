@@ -38,7 +38,6 @@ namespace ACast
 
         private void previousButton_Click(object sender, RoutedEventArgs e)
         {
-
         }
 
         private void backButton_Click(object sender, RoutedEventArgs e)

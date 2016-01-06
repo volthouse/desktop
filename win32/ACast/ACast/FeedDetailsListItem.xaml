@@ -5,17 +5,17 @@
     xmlns:local="using:ACast"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d" Height="64.167" Width="Auto" d:DesignWidth="434" HorizontalContentAlignment="Stretch">
+    mc:Ignorable="d" Height="78" Width="Auto" HorizontalContentAlignment="Stretch">
 
-    <Grid Height="62" Margin="0">
+    <Grid x:Name="grid" Margin="0">
         <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300*"/>
             <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="75.833"/>
-            <ColumnDefinition MinWidth="75.833"/>
+            <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <TextBlock x:Name="textBox" HorizontalAlignment="Left" Margin="0,2,0,0" TextWrapping="Wrap" Text="TextBlock" ScrollViewer.VerticalScrollBarVisibility="Disabled" Width="150"/>
-        <AppBarButton x:Name="pickButton" HorizontalAlignment="Left" Icon="Pin" Label="" Margin="-0.834,1,-1.333,-1" VerticalAlignment="Stretch" Grid.Column="1" Width="78" Click="pickButton_Click"/>
-        <AppBarButton x:Name="playButton" HorizontalAlignment="Left" Icon="Play" Label="" Margin="-0.667,1,-3.499,-1" VerticalAlignment="Stretch" Grid.Column="2" Width="80"/>
+        <TextBlock x:Name="textBox" Margin="0,2,0,0" TextWrapping="Wrap" Text="TextBlock" ScrollViewer.VerticalScrollBarVisibility="Disabled" HorizontalAlignment="Left" Width="120"/>
+        <AppBarButton x:Name="pickButton" HorizontalAlignment="Right" Icon="Pin" Label="" VerticalAlignment="Stretch" Width="80" Click="pickButton_Click" Grid.Column="1"/>
+        <AppBarButton x:Name="playButton" HorizontalAlignment="Right" Icon="Play" Label="" VerticalAlignment="Stretch" Grid.Column="2" Width="80" Click="playButton_Click"/>
     </Grid>
 
 

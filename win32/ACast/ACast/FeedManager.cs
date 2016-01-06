@@ -7,11 +7,15 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using System.Xml.Serialization;
 using Windows.Data.Xml.Dom;
+using Windows.Foundation.Collections;
+using Windows.Media.Playback;
 using Windows.Networking.BackgroundTransfer;
 using Windows.Storage;
 using Windows.Storage.Streams;
+using Windows.UI.Xaml.Controls;
 using Windows.Web;
 using Windows.Web.Syndication;
 
@@ -25,8 +29,8 @@ namespace ACast
     public delegate void FeedListLoadedHandler();
     public delegate void FeedActivatedHandler();
     public delegate void FeedListDeletedHandler();
-    
-    public class FeedHelper
+
+    public class FeedManager : Windows.ApplicationModel.Background.IBackgroundTask
     {
         private CancellationTokenSource cts;
 
@@ -44,18 +48,20 @@ namespace ACast
         public FeedActivatedHandler FeedActivatedAsync;
         public FeedListDeletedHandler FeedListDeletedAsync;
         
-        public static FeedHelper Instance = new FeedHelper();
+        public static FeedManager Instance = new FeedManager();
 
         public List<FeedItem> CurrentFeedItems;
         public Feed CurrentFeed;
 
-        public FeedHelper()
+        public FeedManager()
         {
-            activeDownloads = new List<DownloadOperation>();
             cts = new CancellationTokenSource();
 
+            activeDownloads = new List<DownloadOperation>();
+            activeFeedItemDownloads = new List<FeedDownload>();
+                        
             CurrentFeed = new Feed();
-            CurrentFeedItems = new List<FeedItem>();
+            CurrentFeedItems = new List<FeedItem>();                        
         }
 
         public IReadOnlyList<Feed> FeedList
@@ -234,7 +240,34 @@ namespace ACast
         }
 
         public async void StartDownloadMedia(FeedItem feedItem) {
-            await DownloadFile(feedItem.FileName, ApplicationData.Current.LocalFolder, feedItem.FileName);
+            feedItem.FileName = Guid.NewGuid() + ".mp3";
+            await DownloadFile(feedItem.Uri, ApplicationData.Current.LocalFolder, feedItem.FileName);
+                        
+            var feeds = from item in feedList where item.Id.CompareTo(feedItem.ParentId) == 0 select item;
+
+            if (feeds.Count() > 0)
+            {
+                Feed feed = feeds.First();
+
+                List<FeedItem> items = await LoadFeedItemsAsync(feed.ItemsFilename);
+                var feedItems = from item in items where item.Id.CompareTo(feedItem.Id) == 0 select item;
+                if (feedItems.Count() > 0)
+                {
+                    FeedItem item = feedItems.First();
+                    item.DownloadState = FeedDownloadState.DownloadCompleted;
+                    item.FileName = feedItem.FileName;
+                }
+
+                SerializeFeedItems(feed.ItemsFilename, items);
+                
+                var currentFeedItems = from item in CurrentFeedItems where item.Id.CompareTo(feedItem.Id) == 0 select item;
+                if (currentFeedItems.Count() > 0)
+                {
+                    FeedItem item = currentFeedItems.First();
+                    item.SetState(FeedDownloadState.DownloadCompleted);
+                }
+            }
+
         }
 
         public async Task DownloadFile(string uri, StorageFolder folder, string fileName)
@@ -271,8 +304,22 @@ namespace ACast
 
             SyndicationFeed syndicationFeed = await client.RetrieveFeedAsync(new Uri(stringUri));
 
+
+            feed.Title = syndicationFeed.Title.Text;
             feed.Uri = stringUri;
-            feed.ImageUri = syndicationFeed.ImageUri.ToString();
+            if (syndicationFeed.ImageUri != null) {
+                feed.ImageUri = syndicationFeed.ImageUri.ToString();
+            } else {
+                var elementExtensions = from item in syndicationFeed.ElementExtensions where item.NodeName.CompareTo("image") == 0 select item;
+                if (elementExtensions.Count() > 0)
+                {
+                    if (elementExtensions.First().AttributeExtensions.Count > 0)
+                    {
+                        feed.ImageUri = elementExtensions.First().AttributeExtensions[0].Value;
+                    }
+                }
+            }           
+
                         
             var newSyndicationItems = from item in syndicationFeed.Items where item.PublishedDate > feed.LastUpdateDate select item;
 
@@ -281,7 +328,8 @@ namespace ACast
 
             foreach (var syndicationItem in newSyndicationItems)
             {
-                feedItems.Add(new FeedItem(syndicationItem));
+                feedItems.Add(new FeedItem(feed.Id, syndicationItem));
+                
             }
 
             SerializeFeedItems(feed.ItemsFilename, feedItems);
@@ -324,7 +372,62 @@ namespace ACast
                     FeedDeserializeCompletedAsync();
                 }
             }   
-        }              
+        }
+        private AutoResetEvent SererInitialized;
+        class Constants
+        {
+            public const string CurrentTrack = "trackname";
+            public const string BackgroundTaskStarted = "BackgroundTaskStarted";
+            public const string BackgroundTaskRunning = "BackgroundTaskRunning";
+            public const string BackgroundTaskCancelled = "BackgroundTaskCancelled";
+            public const string AppSuspended = "appsuspend";
+            public const string AppResumed = "appresumed";
+            public const string StartPlayback = "startplayback";
+            public const string SkipNext = "skipnext";
+            public const string Position = "position";
+            public const string AppState = "appstate";
+            public const string BackgroundTaskState = "backgroundtaskstate";
+            public const string SkipPrevious = "skipprevious";
+            public const string Trackchanged = "songchanged";
+            public const string ForegroundAppActive = "Active";
+            public const string ForegroundAppSuspended = "Suspended";
+        }
+
+        public void Play(FeedItem feedItem)
+        {
+            string path = ApplicationData.Current.LocalFolder.Path + @"\" + feedItem.FileName;
+            BackgroundMediaPlayer.Current.SetUriSource(new Uri(path));
+            BackgroundMediaPlayer.Current.Play();
+            BackgroundMediaPlayer.Current.CurrentStateChanged += Current_CurrentStateChanged;
+            BackgroundMediaPlayer.Current.MediaFailed += Current_MediaFailed;
+
+            //var backgroundtaskinitializationresult = this.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            //{
+            //    bool result = SererInitialized.WaitOne(2000);
+            //    //Send message to initiate playback
+            //    if (result == true)
+            //    {
+                    var message = new ValueSet();
+                    message.Add(Constants.StartPlayback, "0");
+                    BackgroundMediaPlayer.SendMessageToBackground(message);
+            //    }
+            //    else
+            //    {
+            //        throw new Exception("Background Audio Task didn't start in expected time");
+            //    }
+            //}
+            //);
+        }
+
+        void Current_MediaFailed(MediaPlayer sender, MediaPlayerFailedEventArgs args)
+        {
+            
+        }
+
+        void Current_CurrentStateChanged(MediaPlayer sender, object args)
+        {
+            var x = BackgroundMediaPlayer.Current.CurrentState;
+        }
                 
         private async Task HandleDownloadAsync(DownloadOperation download, bool start)
         {
@@ -407,6 +510,13 @@ namespace ACast
 
             }
 
+            var feedItems = from item in CurrentFeedItems where item.Uri.CompareTo(download.RequestedUri.ToString()) == 0 select item;
+
+            foreach (var item in feedItems)
+            {
+                item.SetProgress(percent);
+            }
+
             if (DownloadProgressAsync != null)
             {
                 DownloadProgressAsync(percent);
@@ -454,6 +564,11 @@ namespace ACast
             //rootPage.NotifyUser(message, type);
             //Log(message);
         }
+
+        public void Run(Windows.ApplicationModel.Background.IBackgroundTaskInstance taskInstance)
+        {
+            //throw new NotImplementedException();
+        }
     }
 
     public enum NotifyType
@@ -464,7 +579,19 @@ namespace ACast
 
     public class Feed
     {
+        public Feed()
+        {
+            Title = string.Empty;
+            Id = string.Empty;
+            Title = string.Empty;
+            Uri = string.Empty;
+            FileName = string.Empty;
+            ImageUri = string.Empty;
+            ItemsFilename = string.Empty;
+        }
+
         public string Id;
+        public string Title;
         public string Uri;
         public string FileName;
         public string ImageUri;
@@ -477,35 +604,81 @@ namespace ACast
         }
     }
 
-    public enum FeedState
+    public enum FeedDownloadState
     {
         None,
         DownloadStarted,
         DownloadCompleted
     }
 
+    public enum FeedPlayerState
+    {
+        None,
+        PlayerStarted,
+        PlayerCompleted
+    }
+
     public class FeedItem
     {
+        [XmlIgnore]
+        public EventHandler StateChanged;
+        [XmlIgnore]
+        public EventHandler<float> DownloadProgressChanged;
+
         public FeedItem() {  }
 
-        public FeedItem(SyndicationItem item)
+        public FeedItem(string parentId, SyndicationItem item)
         {
+            ParentId = parentId;
             Id = item.Id;
             Title = item.Title.Text;
             Summary = item.Summary.Text;
             PublishedDate = item.PublishedDate;
+           
+            var x = from l in item.Links where l.MediaType.CompareTo("audio/mpeg") == 0 select l;
+
+            if (x.Count() > 0)
+            {
+                Uri = x.FirstOrDefault().Uri.ToString();
+            }
+
         }
 
+        public string ParentId;
         public string Id;
         public string FileName;
-        public FeedState MediaState;
+        public string Uri;
+        public FeedDownloadState DownloadState;
+        public FeedPlayerState PlayerState;
+        public float PlayerPos;
         public string Title;
         public string Summary;
         public DateTimeOffset PublishedDate;
+
+        public void SetState(FeedDownloadState state)
+        {
+            DownloadState = state;
+            if (StateChanged != null)
+            {
+                StateChanged(this, EventArgs.Empty);
+            }
+        }
+
+        public void SetProgress(float progress)
+        {
+            if (DownloadProgressChanged != null)
+            {
+                DownloadProgressChanged(this, progress);
+            }
+        }
     }
 
     public class FeedDownload
     {
+        public FeedDownload(DownloadOperation op)
+        {
+
+        }
         public string ItemsFilename;
         public int ItemIdx;
     }

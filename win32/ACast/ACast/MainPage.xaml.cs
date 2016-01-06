@@ -32,7 +32,7 @@ namespace ACast
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
     public sealed partial class MainPage : Page
-    {        
+    {
         private ApplicationDataContainer localSettings = null;
         private SynchronizationContext context;
 
@@ -46,43 +46,43 @@ namespace ACast
 
             localSettings = ApplicationData.Current.LocalSettings;
 
-            FeedHelper.Instance.FeedListLoadedAsync += FeedListLoadedAsync;
-            FeedHelper.Instance.LoadFeedListAsync();
- 
+            feedListView.ItemClick += feedListView_ItemClick;
+
+            FeedManager.Instance.FeedListLoadedAsync += feedListLoadedAsync;
+            
+            FeedManager.Instance.LoadFeedListAsync();
+
         }
 
-        private void DownloadProgressAsync(float percent) 
+        private void feedListLoadedAsync()
         {
-            var ignored = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            FeedManager.Instance.FeedListLoadedAsync -= feedListLoadedAsync;
+
+            context.Post(new SendOrPostCallback((o) =>
             {
-                progressBar.Value = percent;
-            });
-        }
+                feedListView.Items.Clear();
 
-        private void DownloadCompletedAsync()
-        {
-            var ignored = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-            {
-                progressBar.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
-            });
-        }
-
-       
-        private void FeedListLoadedAsync()
-        {
-            FeedHelper.Instance.FeedListLoadedAsync += FeedListLoadedAsync;
-
-            context.Post(new SendOrPostCallback((o) => {
-                listView.Items.Clear();
-
-                foreach (var item in FeedHelper.Instance.FeedList)
+                foreach (var item in FeedManager.Instance.FeedList)
                 {
-                    CustomListItem customItem = new CustomListItem();
+                    FeedListItem customItem = new FeedListItem();
                     customItem.SetItem(item);
-                    listView.Items.Add(customItem);
+                    feedListView.Items.Add(customItem);                    
                 }
             }), null);
-        }           
+        }
+
+        private void feedActivatedAsync()
+        {
+            FeedManager.Instance.FeedActivatedAsync -= feedActivatedAsync;
+
+            feedItemsListView.Items.Clear();
+
+            foreach (var item in FeedManager.Instance.CurrentFeedItems)
+            {
+                FeedDetailsListItem detailsItem = new FeedDetailsListItem(item);
+                feedItemsListView.Items.Add(detailsItem);
+            }
+        }
 
         /// <summary>
         /// Invoked when this page is about to be displayed in a Frame.
@@ -98,12 +98,6 @@ namespace ACast
             // Windows.Phone.UI.Input.HardwareButtons.BackPressed event.
             // If you are using the NavigationHelper provided by some templates,
             // this event is handled for you.
-        }          
-
-        private void listView_ItemClick(object sender, ItemClickEventArgs e)
-        {
-            int i = listView.Items.IndexOf(e.ClickedItem);
-            Frame.Navigate(typeof(FeedDetailsPage), i);
         }
 
         private async void addFeedButton_Click(object sender, RoutedEventArgs e)
@@ -111,19 +105,30 @@ namespace ACast
             var newFeedUrlDlg = new FeedUrlDialog();
             await newFeedUrlDlg.ShowAsync();
 
-            FeedHelper.Instance.LoadFeedListAsync();
+            FeedManager.Instance.FeedListLoadedAsync += feedListLoadedAsync;
+            FeedManager.Instance.LoadFeedListAsync();
         }
 
         private void clearButton_Click(object sender, RoutedEventArgs e)
         {
-            FeedHelper.Instance.FeedListDeletedAsync += FeedListDeletedAsync;
-            FeedHelper.Instance.DeleteFeedList();
+            FeedManager.Instance.FeedListDeletedAsync += FeedListDeletedAsync;
+            FeedManager.Instance.DeleteFeedList();
         }
 
         private void FeedListDeletedAsync()
         {
-            FeedHelper.Instance.FeedListDeletedAsync -= FeedListDeletedAsync;
-            FeedHelper.Instance.LoadFeedListAsync();
+            FeedManager.Instance.FeedListDeletedAsync -= FeedListDeletedAsync;
+            FeedManager.Instance.FeedListLoadedAsync += feedListLoadedAsync;
+            FeedManager.Instance.LoadFeedListAsync();
         }
+
+        private void feedListView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            FeedManager.Instance.FeedActivatedAsync += feedActivatedAsync;
+
+            int feedIdx = feedListView.Items.IndexOf(e.ClickedItem);
+            FeedManager.Instance.ActiveFeedAsync(feedIdx);
+        }
+
     }
 }

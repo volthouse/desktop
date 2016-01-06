@@ -29,6 +29,8 @@ namespace ACast
 
             //feedUrl.Text = "http://rss.golem.de/rss.php?feed=ATOM1.0";
             feedUrl.Text = "http://www.cczwei.de/rss_issues_all.php";
+            //feedUrl.Text = "http://deimhart.net/index.php?/feeds/index.rss2";
+            //feedUrl.Text = "http://chaosradio.ccc.de/chaosradio-latest.rss";
         }
 
         private void ContentDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
@@ -45,8 +47,8 @@ namespace ACast
             {
                 args.Cancel = true;
                 FeedUrl = feedUrl.Text;
-                FeedHelper.Instance.AddFeedCompletedAsync += AddFeedCompletedAsync;
-                FeedHelper.Instance.AddFeed(feedUrl.Text);
+                FeedManager.Instance.AddFeedCompletedAsync += AddFeedCompletedAsync;
+                FeedManager.Instance.AddFeed(feedUrl.Text);
             }            
         }
 
@@ -57,7 +59,7 @@ namespace ACast
 
         private void AddFeedCompletedAsync()
         {
-            FeedHelper.Instance.AddFeedCompletedAsync -= AddFeedCompletedAsync;
+            FeedManager.Instance.AddFeedCompletedAsync -= AddFeedCompletedAsync;
             this.Hide();            
         }
     }
