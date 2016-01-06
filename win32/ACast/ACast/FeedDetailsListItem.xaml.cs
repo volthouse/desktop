@@ -6,6 +6,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.Storage;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -77,6 +78,9 @@ namespace ACast
         private void playButton_Click(object sender, RoutedEventArgs e)
         {
             FeedManager.Instance.Play(FeedItem);
+            //string path = ApplicationData.Current.LocalFolder.Path + @"\" + FeedItem.FileName;
+            //mediaElement.Source = new Uri(path);
+            //mediaElement.Play();
         }
         
     }

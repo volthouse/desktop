@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Xml.Serialization;
+using Windows.ApplicationModel.Background;
 using Windows.Data.Xml.Dom;
 using Windows.Foundation.Collections;
 using Windows.Media.Playback;
@@ -30,7 +31,7 @@ namespace ACast
     public delegate void FeedActivatedHandler();
     public delegate void FeedListDeletedHandler();
 
-    public class FeedManager : Windows.ApplicationModel.Background.IBackgroundTask
+    public class FeedManager : IBackgroundTask
     {
         private CancellationTokenSource cts;
 
@@ -395,28 +396,18 @@ namespace ACast
 
         public void Play(FeedItem feedItem)
         {
+            BackgroundMediaPlayer.MessageReceivedFromForeground += BackgroundMediaPlayer_MessageReceivedFromForeground;
+
             string path = ApplicationData.Current.LocalFolder.Path + @"\" + feedItem.FileName;
             BackgroundMediaPlayer.Current.SetUriSource(new Uri(path));
             BackgroundMediaPlayer.Current.Play();
-            BackgroundMediaPlayer.Current.CurrentStateChanged += Current_CurrentStateChanged;
-            BackgroundMediaPlayer.Current.MediaFailed += Current_MediaFailed;
+            
 
-            //var backgroundtaskinitializationresult = this.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-            //{
-            //    bool result = SererInitialized.WaitOne(2000);
-            //    //Send message to initiate playback
-            //    if (result == true)
-            //    {
-                    var message = new ValueSet();
-                    message.Add(Constants.StartPlayback, "0");
-                    BackgroundMediaPlayer.SendMessageToBackground(message);
-            //    }
-            //    else
-            //    {
-            //        throw new Exception("Background Audio Task didn't start in expected time");
-            //    }
-            //}
-            //);
+        }
+
+        private void BackgroundMediaPlayer_MessageReceivedFromForeground(object sender, MediaPlayerDataReceivedEventArgs e)
+        {
+            //throw new NotImplementedException();
         }
 
         void Current_MediaFailed(MediaPlayer sender, MediaPlayerFailedEventArgs args)
@@ -565,9 +556,17 @@ namespace ACast
             //Log(message);
         }
 
+        private BackgroundTaskDeferral _deferral;
+
         public void Run(Windows.ApplicationModel.Background.IBackgroundTaskInstance taskInstance)
         {
-            //throw new NotImplementedException();
+            _deferral = taskInstance.GetDeferral();
+             taskInstance.Canceled += TaskInstance_Canceled;
+        }
+
+        private void TaskInstance_Canceled(IBackgroundTaskInstance sender, BackgroundTaskCancellationReason reason)
+        {
+            _deferral.Complete();
         }
     }
 

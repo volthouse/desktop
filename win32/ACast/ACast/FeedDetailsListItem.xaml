@@ -16,6 +16,7 @@
         <TextBlock x:Name="textBox" Margin="0,2,0,0" TextWrapping="Wrap" Text="TextBlock" ScrollViewer.VerticalScrollBarVisibility="Disabled" HorizontalAlignment="Left" Width="120"/>
         <AppBarButton x:Name="pickButton" HorizontalAlignment="Right" Icon="Pin" Label="" VerticalAlignment="Stretch" Width="80" Click="pickButton_Click" Grid.Column="1"/>
         <AppBarButton x:Name="playButton" HorizontalAlignment="Right" Icon="Play" Label="" VerticalAlignment="Stretch" Grid.Column="2" Width="80" Click="playButton_Click"/>
+        <MediaElement x:Name="mediaElement" Grid.ColumnSpan="2" Grid.Column="1" HorizontalAlignment="Left" Height="78" Margin="44,174,0,-174" VerticalAlignment="Top" Width="100"/>
     </Grid>
 
 
