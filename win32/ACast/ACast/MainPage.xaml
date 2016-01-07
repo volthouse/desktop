@@ -9,10 +9,22 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
     <Page.BottomAppBar>
         <CommandBar>
-            <AppBarButton x:Name="addFeedButton" Icon="Add" Label="Add Feed" Click="addFeedButton_Click"/>
-            <AppBarButton x:Name="clearButton" Icon="Remove" Label="Remove" Click="clearButton_Click" />
-            <AppBarButton x:Name="rewindButton" Icon="Back" Label="Rewind"/>
-            <AppBarButton x:Name="playButton" Icon="Play" Label="Play"/>
+            <AppBarButton x:Name="editFeedsButton" Icon="Edit" Label="Edit Feeds">
+                <AppBarButton.Flyout>
+                    <MenuFlyout>
+                        <MenuFlyoutItem x:Name="addFeedFlyout" Text="Add Feed"/>
+                        <MenuFlyoutItem x:Name="removeFeedFlyout" Text="Remove Feed"/>
+                        <MenuFlyoutItem x:Name="cleanFlyout" Text="Clean"/>
+                    </MenuFlyout>
+                </AppBarButton.Flyout>
+            </AppBarButton>
+            <AppBarButton x:Name="playButton" Icon="Play" Label="Play">
+                <AppBarButton.Flyout>
+                    <Flyout Placement="Bottom">
+                        <local:PlayerControl/>
+                    </Flyout>
+                </AppBarButton.Flyout>
+            </AppBarButton>
         </CommandBar>
     </Page.BottomAppBar>
 

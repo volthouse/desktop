@@ -1,0 +1,30 @@
+﻿<UserControl
+    x:Class="ACast.PlayerControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:ACast"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    d:DesignWidth="400" Height="118" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+
+    <Grid VerticalAlignment="Top" Height="125">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="80*"/>
+            <RowDefinition Height="80*"/>
+        </Grid.RowDefinitions>
+        <AppBarButton x:Name="previousButton" HorizontalAlignment="Stretch" Icon="Previous" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True" />
+        <AppBarButton x:Name="playButton" HorizontalAlignment="Stretch" Icon="Play" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True"  Grid.Column="1"/>
+        <AppBarButton x:Name="forwardButton" HorizontalAlignment="Stretch" Icon="Forward" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True"  Grid.Column="2"/>
+        <AppBarButton x:Name="backButton" HorizontalAlignment="Stretch" Icon="Back" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True"  Grid.Column="3"/>
+        <AppBarButton x:Name="nextButton" HorizontalAlignment="Stretch" Icon="Next" Label="appbarbutton" Margin="337,430,0,0" IsCompact="True" Grid.Column="4"/>
+        <Slider VerticalAlignment="Top" Width="380" Grid.Row="1" Grid.ColumnSpan="4"/>
+    </Grid>
+</UserControl>

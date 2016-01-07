@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -11,6 +12,7 @@ using System.Xml.Linq;
 using System.Xml.Serialization;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.Media.Playback;
 using Windows.Storage;
 using Windows.Storage.Streams;
 using Windows.UI.Core;
@@ -33,7 +35,6 @@ namespace ACast
     /// </summary>
     public sealed partial class MainPage : Page
     {
-        private ApplicationDataContainer localSettings = null;
         private SynchronizationContext context;
 
         public MainPage()
@@ -44,14 +45,63 @@ namespace ACast
 
             this.NavigationCacheMode = NavigationCacheMode.Required;
 
-            localSettings = ApplicationData.Current.LocalSettings;
 
             feedListView.ItemClick += feedListView_ItemClick;
 
-            FeedManager.Instance.FeedListLoadedAsync += feedListLoadedAsync;
-            
+            FeedManager.Instance.FeedListLoadedAsync += feedListLoadedAsync;            
             FeedManager.Instance.LoadFeedListAsync();
 
+            Player.Instance.StateChanged += playerStateChanged;
+            playButton.Visibility = Visibility.Collapsed;
+            playButton.Click += playButton_Click;
+            addFeedFlyout.Click += addFeedFlyout_Click;
+            removeFeedFlyout.Click += removeFeedFlyout_Click;
+
+        }
+
+        async void addFeedFlyout_Click(object sender, RoutedEventArgs e)
+        {
+            var newFeedUrlDlg = new FeedUrlDialog();
+            await newFeedUrlDlg.ShowAsync();
+
+            FeedManager.Instance.FeedListLoadedAsync += feedListLoadedAsync;
+            FeedManager.Instance.LoadFeedListAsync();
+        }
+
+        void removeFeedFlyout_Click(object sender, RoutedEventArgs e)
+        {
+            FeedManager.Instance.FeedListDeletedAsync += FeedListDeletedAsync;
+            FeedManager.Instance.DeleteFeedList();
+        }
+
+        void playerStateChanged(object sender, Windows.Media.Playback.MediaPlayerState e)
+        {
+            context.Post(new SendOrPostCallback((o) =>
+            {
+                Debug.WriteLine("player state changed:" + e.ToString());
+                switch (e)
+                {
+                    case MediaPlayerState.Buffering:
+                        break;
+                    case MediaPlayerState.Closed:
+                        playButton.Visibility = Visibility.Collapsed;
+                        break;
+                    case MediaPlayerState.Opening:
+                        playButton.Visibility = Visibility.Visible;
+                        break;
+                    case MediaPlayerState.Paused:
+                        playButton.Icon = new SymbolIcon(Symbol.Play);
+                        break;
+                    case MediaPlayerState.Playing:
+                        playButton.Icon = new SymbolIcon(Symbol.Pause);
+                        break;
+                    case MediaPlayerState.Stopped:
+                        playButton.Visibility = Visibility.Collapsed;
+                        break;
+                    default:
+                        break;
+                }
+            }), null);
         }
 
         private void feedListLoadedAsync()
@@ -100,21 +150,6 @@ namespace ACast
             // this event is handled for you.
         }
 
-        private async void addFeedButton_Click(object sender, RoutedEventArgs e)
-        {
-            var newFeedUrlDlg = new FeedUrlDialog();
-            await newFeedUrlDlg.ShowAsync();
-
-            FeedManager.Instance.FeedListLoadedAsync += feedListLoadedAsync;
-            FeedManager.Instance.LoadFeedListAsync();
-        }
-
-        private void clearButton_Click(object sender, RoutedEventArgs e)
-        {
-            FeedManager.Instance.FeedListDeletedAsync += FeedListDeletedAsync;
-            FeedManager.Instance.DeleteFeedList();
-        }
-
         private void FeedListDeletedAsync()
         {
             FeedManager.Instance.FeedListDeletedAsync -= FeedListDeletedAsync;
@@ -128,6 +163,21 @@ namespace ACast
 
             int feedIdx = feedListView.Items.IndexOf(e.ClickedItem);
             FeedManager.Instance.ActiveFeedAsync(feedIdx);
+        }
+
+        private void playButton_Click(object sender, RoutedEventArgs e)
+        {
+            switch (Player.Instance.State)
+            {
+                case MediaPlayerState.Paused:
+                    Player.Instance.Resume();
+                    break;
+                case MediaPlayerState.Playing:
+                    Player.Instance.Pause();
+                    break;
+                default:
+                    break;
+            }
         }
 
     }

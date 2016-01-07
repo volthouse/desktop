@@ -11,7 +11,7 @@ using System.Linq;
 using System.Text;
 using Windows.Storage;
 
-namespace BackgroundAudioPlayerCS
+namespace ACast
 {
     /// <summary>
     /// Collection of string constants used in the entire solution. This file is shared for all projects
