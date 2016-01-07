@@ -7,9 +7,14 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    
     <Page.BottomAppBar>
+        
         <CommandBar>
+            
+            
             <AppBarButton x:Name="editFeedsButton" Icon="Edit" Label="Edit Feeds">
+                
                 <AppBarButton.Flyout>
                     <MenuFlyout>
                         <MenuFlyoutItem x:Name="addFeedFlyout" Text="Add Feed"/>
@@ -18,12 +23,14 @@
                     </MenuFlyout>
                 </AppBarButton.Flyout>
             </AppBarButton>
-            <AppBarButton x:Name="playButton" Icon="Play" Label="Play">
+            <AppBarButton x:Name="playButton" Icon="Play" Label="Play"/>
+            <AppBarButton x:Name="playerControlButton" Label="Player" Icon="Audio">
                 <AppBarButton.Flyout>
-                    <Flyout Placement="Bottom">
+                    <PickerFlyout ConfirmationButtonsVisible="True" Placement="Full">
                         <local:PlayerControl/>
-                    </Flyout>
+                    </PickerFlyout>
                 </AppBarButton.Flyout>
+
             </AppBarButton>
         </CommandBar>
     </Page.BottomAppBar>
