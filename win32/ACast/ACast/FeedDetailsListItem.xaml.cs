@@ -77,7 +77,7 @@ namespace ACast
 
         private void playButton_Click(object sender, RoutedEventArgs e)
         {
-            FeedManager.Instance.Play(FeedItem);
+            Player.Instance.Play(FeedItem);
             //string path = ApplicationData.Current.LocalFolder.Path + @"\" + FeedItem.FileName;
             //mediaElement.Source = new Uri(path);
             //mediaElement.Play();

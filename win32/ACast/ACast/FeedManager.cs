@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Xml.Serialization;
-using Windows.ApplicationModel.Background;
 using Windows.Data.Xml.Dom;
 using Windows.Foundation.Collections;
 using Windows.Media.Playback;
@@ -31,7 +30,7 @@ namespace ACast
     public delegate void FeedActivatedHandler();
     public delegate void FeedListDeletedHandler();
 
-    public class FeedManager : IBackgroundTask
+    public class FeedManager : Windows.ApplicationModel.Background.IBackgroundTask
     {
         private CancellationTokenSource cts;
 
@@ -374,52 +373,7 @@ namespace ACast
                 }
             }   
         }
-        private AutoResetEvent SererInitialized;
-        class Constants
-        {
-            public const string CurrentTrack = "trackname";
-            public const string BackgroundTaskStarted = "BackgroundTaskStarted";
-            public const string BackgroundTaskRunning = "BackgroundTaskRunning";
-            public const string BackgroundTaskCancelled = "BackgroundTaskCancelled";
-            public const string AppSuspended = "appsuspend";
-            public const string AppResumed = "appresumed";
-            public const string StartPlayback = "startplayback";
-            public const string SkipNext = "skipnext";
-            public const string Position = "position";
-            public const string AppState = "appstate";
-            public const string BackgroundTaskState = "backgroundtaskstate";
-            public const string SkipPrevious = "skipprevious";
-            public const string Trackchanged = "songchanged";
-            public const string ForegroundAppActive = "Active";
-            public const string ForegroundAppSuspended = "Suspended";
-        }
-
-        public void Play(FeedItem feedItem)
-        {
-            BackgroundMediaPlayer.MessageReceivedFromForeground += BackgroundMediaPlayer_MessageReceivedFromForeground;
-
-            string path = ApplicationData.Current.LocalFolder.Path + @"\" + feedItem.FileName;
-            BackgroundMediaPlayer.Current.SetUriSource(new Uri(path));
-            BackgroundMediaPlayer.Current.Play();
-            
-
-        }
-
-        private void BackgroundMediaPlayer_MessageReceivedFromForeground(object sender, MediaPlayerDataReceivedEventArgs e)
-        {
-            //throw new NotImplementedException();
-        }
-
-        void Current_MediaFailed(MediaPlayer sender, MediaPlayerFailedEventArgs args)
-        {
-            
-        }
-
-        void Current_CurrentStateChanged(MediaPlayer sender, object args)
-        {
-            var x = BackgroundMediaPlayer.Current.CurrentState;
-        }
-                
+                        
         private async Task HandleDownloadAsync(DownloadOperation download, bool start)
         {
             try
@@ -556,17 +510,9 @@ namespace ACast
             //Log(message);
         }
 
-        private BackgroundTaskDeferral _deferral;
-
         public void Run(Windows.ApplicationModel.Background.IBackgroundTaskInstance taskInstance)
         {
-            _deferral = taskInstance.GetDeferral();
-             taskInstance.Canceled += TaskInstance_Canceled;
-        }
-
-        private void TaskInstance_Canceled(IBackgroundTaskInstance sender, BackgroundTaskCancellationReason reason)
-        {
-            _deferral.Complete();
+            //throw new NotImplementedException();
         }
     }
 
