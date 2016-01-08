@@ -7,14 +7,14 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-    
+
     <Page.BottomAppBar>
-        
+
         <CommandBar>
-            
-            
+
+
             <AppBarButton x:Name="editFeedsButton" Icon="Edit" Label="Edit Feeds">
-                
+
                 <AppBarButton.Flyout>
                     <MenuFlyout>
                         <MenuFlyoutItem x:Name="addFeedFlyout" Text="Add Feed"/>
@@ -36,12 +36,19 @@
     </Page.BottomAppBar>
 
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="61*"/>
+            <RowDefinition Height="519*"/>
+        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="107*"/>
             <ColumnDefinition Width="293*"/>
         </Grid.ColumnDefinitions>
-        <ListView x:Name="feedListView" IsItemClickEnabled="True" Margin="0,0,5,0"/>
-        <ListView x:Name="feedItemsListView" IsItemClickEnabled="True" Grid.Column="1"/>
+        <ListView x:Name="feedListView" IsItemClickEnabled="True" Margin="0,0,4.667,0" Grid.RowSpan="2">
+
+        </ListView>
+        <ListView x:Name="feedItemsListView" IsItemClickEnabled="True" Grid.Column="1" Grid.Row="1" Margin="0.333,2.333,0,-1"/>
+        <AppBarButton x:Name="refreshButton" Grid.Column="1" HorizontalAlignment="Right" Icon="Refresh" Label="" VerticalAlignment="Stretch" Width="80" Margin="0,0,0,512" Grid.RowSpan="2"/>
 
 
     </Grid>

@@ -37,6 +37,7 @@ namespace ACast
     public sealed partial class MainPage : Page
     {
         private SynchronizationContext context;
+        private int currentFeedIdx = 0;
 
         public MainPage()
         {
@@ -63,6 +64,17 @@ namespace ACast
             playerControlButton.Click += playerControlButton_Click;
 
             cleanFlyout.Click += cleanFlyout_Click;
+
+            refreshButton.Click += RefreshButton_Click;
+        }
+
+        async private void RefreshButton_Click(object sender, RoutedEventArgs e)
+        {
+            await FeedManager.Instance.UpdateFeedAsync(FeedManager.Instance.CurrentFeed.Uri.ToString(), FeedManager.Instance.CurrentFeed);
+
+            FeedManager.Instance.FeedActivatedAsync += feedActivatedAsync;
+
+            FeedManager.Instance.ActiveFeedAsync(currentFeedIdx);
         }
 
         async void cleanFlyout_Click(object sender, RoutedEventArgs e)
@@ -193,6 +205,9 @@ namespace ACast
 
             int feedIdx = feedListView.Items.IndexOf(e.ClickedItem);
             FeedManager.Instance.ActiveFeedAsync(feedIdx);
+
+            currentFeedIdx = feedIdx;
+
         }
 
         private void playButton_Click(object sender, RoutedEventArgs e)
