@@ -26,9 +26,9 @@
             <AppBarButton x:Name="playButton" Icon="Play" Label="Play"/>
             <AppBarButton x:Name="playerControlButton" Label="Player" Icon="Audio">
                 <AppBarButton.Flyout>
-                    <PickerFlyout ConfirmationButtonsVisible="True" Placement="Full">
-                        <local:PlayerControl/>
-                    </PickerFlyout>
+                    <local:PlayerFlyout Placement="Full">
+                        <local:PlayerControl x:Name="playerControl"/>
+                    </local:PlayerFlyout>
                 </AppBarButton.Flyout>
 
             </AppBarButton>

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.Media.Playback;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -22,7 +23,28 @@ namespace ACast
         public PlayerControl()
         {
             this.InitializeComponent();
+
+            playButton.Click += playButton_Click;
+            posSlider.ValueChanged += posSlider_ValueChanged;
         }
+
+        void posSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+
+        }
+
+        void playButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (Player.Instance.State == MediaPlayerState.Playing)
+            {
+                Player.Instance.Pause();
+            }
+            else if (Player.Instance.State == MediaPlayerState.Paused)
+            {
+                Player.Instance.Resume();
+            }
+        }
+
 
         
         

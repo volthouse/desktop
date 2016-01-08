@@ -16,6 +16,7 @@ using Windows.Media.Playback;
 using Windows.Storage;
 using Windows.Storage.Streams;
 using Windows.UI.Core;
+using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -54,9 +55,38 @@ namespace ACast
             Player.Instance.StateChanged += playerStateChanged;
             playButton.Visibility = Visibility.Collapsed;
             playButton.Click += playButton_Click;
-            addFeedFlyout.Click += addFeedFlyout_Click;
-            removeFeedFlyout.Click += removeFeedFlyout_Click;
 
+            addFeedFlyout.Click += addFeedFlyout_Click;
+            
+            removeFeedFlyout.Click += removeFeedFlyout_Click;
+            
+            playerControlButton.Click += playerControlButton_Click;
+
+            cleanFlyout.Click += cleanFlyout_Click;
+        }
+
+        async void cleanFlyout_Click(object sender, RoutedEventArgs e)
+        {
+            StorageFolder folder = ApplicationData.Current.LocalFolder;
+            foreach (var file in await folder.GetFilesAsync())
+            {
+                await file.DeleteAsync();
+            }
+
+            var dialog = new MessageDialog("All files deleted");
+            await dialog.ShowAsync();
+        }
+
+        void playerControlButton_Click(object sender, RoutedEventArgs e)
+        {
+            PlayerFlyout flyout = playerControlButton.Flyout as PlayerFlyout;
+            if (flyout != null)
+            {
+                if (flyout.IsOpen)
+                {
+                    flyout.Hide();
+                }
+            }
         }
 
         async void addFeedFlyout_Click(object sender, RoutedEventArgs e)
@@ -181,4 +211,26 @@ namespace ACast
         }
 
     }
+
+    public class PlayerFlyout : Flyout
+    {
+        public bool IsOpen { get; private set; }
+
+        public PlayerFlyout()
+        {
+            this.Opened += OnOpened;
+            this.Closed += OnClosed;
+        }
+
+        void OnClosed(object sender, object e)
+        {
+            IsOpen = false;
+        }
+
+        void OnOpened(object sender, object e)
+        {
+            IsOpen = true;    
+        }
+    }
+
 }

@@ -23,7 +23,7 @@
         <AppBarButton x:Name="forwardButton" HorizontalAlignment="Stretch" Icon="Forward" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True"  Grid.Column="2" Width="80"/>
         <AppBarButton x:Name="backButton" HorizontalAlignment="Stretch" Icon="Back" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True"  Grid.Column="3" Width="80"/>
         <AppBarButton x:Name="nextButton" HorizontalAlignment="Stretch" Icon="Next" Label="appbarbutton" IsCompact="True" Grid.Column="4" Width="80"/>
-        <Slider VerticalAlignment="Top" Grid.Row="1" Grid.ColumnSpan="5"/>
+        <Slider x:Name="posSlider" VerticalAlignment="Top" Grid.Row="1" Grid.ColumnSpan="5"/>
     </Grid>
 
 
