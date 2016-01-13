@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DataBinding;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -38,6 +39,7 @@ namespace ACast
     {
         private SynchronizationContext context;
         private int currentFeedIdx = 0;
+        private GeneratorIncrementalLoadingClass<FeedDetailsListViewItem> feedItems;
 
         public MainPage()
         {
@@ -66,6 +68,21 @@ namespace ACast
             cleanFlyout.Click += cleanFlyout_Click;
 
             refreshButton.Click += RefreshButton_Click;
+
+            //feedItems = new GeneratorIncrementalLoadingClass<FeedListViewItem>(1000, getItems);
+            //feedItemsListView.ItemsSource = feedItems;
+        }
+
+        FeedDetailsListViewItem getItems(int count)
+        {
+            //var item = new FeedListViewItem();
+            //item.SetText(count.ToString());
+            //return item;
+
+            var feedItem = FeedManager.Instance.CurrentFeedItems[count];
+            var item = new FeedDetailsListViewItem(feedItem);
+
+            return item;
         }
 
         async private void RefreshButton_Click(object sender, RoutedEventArgs e)
@@ -154,26 +171,29 @@ namespace ACast
             {
                 feedListView.Items.Clear();
 
-                foreach (var item in FeedManager.Instance.FeedList)
+                foreach (Feed item in FeedManager.Instance.FeedList)
                 {
-                    FeedListItem customItem = new FeedListItem();
+                    FeedListViewItem customItem = new FeedListViewItem();
                     customItem.SetItem(item);
-                    feedListView.Items.Add(customItem);                    
+                    feedListView.Items.Add(customItem);
                 }
             }), null);
         }
 
         private void feedActivatedAsync()
         {
-            FeedManager.Instance.FeedActivatedAsync -= feedActivatedAsync;
+            feedItems = new GeneratorIncrementalLoadingClass<FeedDetailsListViewItem>((uint)FeedManager.Instance.CurrentFeedItems.Count, getItems);
+            feedItemsListView.ItemsSource = feedItems;
 
-            feedItemsListView.Items.Clear();
+            //FeedManager.Instance.FeedActivatedAsync -= feedActivatedAsync;
 
-            foreach (var item in FeedManager.Instance.CurrentFeedItems)
-            {
-                FeedDetailsListItem detailsItem = new FeedDetailsListItem(item);
-                feedItemsListView.Items.Add(detailsItem);
-            }
+            //feedItemsListView.Items.Clear();
+
+            //foreach (var item in FeedManager.Instance.CurrentFeedItems)
+            //{
+            //    FeedDetailsListViewItem detailsItem = new FeedDetailsListViewItem(item);
+            //    feedItemsListView.Items.Add(detailsItem);
+            //}
         }
 
         /// <summary>

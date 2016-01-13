@@ -19,14 +19,14 @@ using Windows.UI.Xaml.Navigation;
 
 namespace ACast
 {
-    public sealed partial class FeedDetailsListItem : UserControl
+    public sealed partial class FeedDetailsListViewItem : UserControl
     {
         private SynchronizationContext context;
 
         public FeedItem FeedItem { get; private set; }
 
 
-        public FeedDetailsListItem(FeedItem feedItem)
+        public FeedDetailsListViewItem(FeedItem feedItem)
         {
             this.InitializeComponent();
 

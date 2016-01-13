@@ -1,5 +1,5 @@
 ﻿<UserControl
-    x:Class="ACast.FeedListItem"
+    x:Class="ACast.FeedListViewItem"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:ACast"

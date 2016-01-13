@@ -19,11 +19,11 @@ using Windows.UI.Xaml.Navigation;
 
 namespace ACast
 {
-    public sealed partial class FeedListItem : UserControl 
+    public sealed partial class FeedListViewItem : UserControl 
     {
         //private DispatcherTimer timer;
 
-        public FeedListItem()
+        public FeedListViewItem()
         {
             this.InitializeComponent();
             //timer = new DispatcherTimer();

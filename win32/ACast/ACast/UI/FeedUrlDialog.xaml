@@ -13,7 +13,8 @@
     SecondaryButtonClick="ContentDialog_SecondaryButtonClick">
 
     <StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-        <TextBox x:Name="feedUrl" Header="Url"/>
+        <!--<TextBox x:Name="feedUrl" Header="Url"/>-->
+        <ComboBox x:Name="urlCombo" SelectionChanged="ComboBox_SelectionChanged"></ComboBox>
 
         <!-- Content body -->
     </StackPanel>

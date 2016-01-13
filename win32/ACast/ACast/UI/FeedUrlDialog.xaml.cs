@@ -28,28 +28,36 @@ namespace ACast
             this.InitializeComponent();
 
             //feedUrl.Text = "http://rss.golem.de/rss.php?feed=ATOM1.0";
-            feedUrl.Text = "http://www.cczwei.de/rss_issues_all.php";
+            //feedUrl.Text = "http://www.cczwei.de/rss_issues_all.php";
             //feedUrl.Text = "http://deimhart.net/index.php?/feeds/index.rss2";
             //feedUrl.Text = "http://chaosradio.ccc.de/chaosradio-latest.rss";
+            //feedUrl.Text = "http://www.br-online.de/podcast/radiowissen/cast.xml";
+
+            urlCombo.Items.Add("http://rss.golem.de/rss.php?feed=ATOM1.0");
+            urlCombo.Items.Add("http://www.cczwei.de/rss_issues_all.php");
+            urlCombo.Items.Add("http://deimhart.net/index.php?/feeds/index.rss2");
+            urlCombo.Items.Add("http://chaosradio.ccc.de/chaosradio-latest.rss");
+            urlCombo.Items.Add("http://www.br-online.de/podcast/radiowissen/cast.xml");
         }
 
         private void ContentDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
         {
 
-            Uri uri;
-            if (!Uri.TryCreate(feedUrl.Text, UriKind.Absolute, out uri))
-            {
-                //rootPage.NotifyUser("Error: Invalid URI.", NotifyType.ErrorMessage);
+            //Uri uri;
+            //if (!Uri.TryCreate(feedUrl.Text, UriKind.Absolute, out uri))
+            //{
+            //    //rootPage.NotifyUser("Error: Invalid URI.", NotifyType.ErrorMessage);
 
+            //    args.Cancel = true;
+            //}
+            //else
+            //{
                 args.Cancel = true;
-            }
-            else
-            {
-                args.Cancel = true;
-                FeedUrl = feedUrl.Text;
+                //FeedUrl = feedUrl.Text;
+                FeedUrl = urlCombo.SelectedItem.ToString();
                 FeedManager.Instance.AddFeedCompletedAsync += AddFeedCompletedAsync;
-                FeedManager.Instance.AddFeed(feedUrl.Text);
-            }            
+                FeedManager.Instance.AddFeed(FeedUrl);
+            //}            
         }
 
         private void ContentDialog_SecondaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
@@ -61,6 +69,11 @@ namespace ACast
         {
             FeedManager.Instance.AddFeedCompletedAsync -= AddFeedCompletedAsync;
             this.Hide();            
+        }
+
+        private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
         }
     }
 }

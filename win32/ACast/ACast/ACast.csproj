@@ -84,21 +84,23 @@
     </Compile>
     <Compile Include="ApplicationSettingsHelper.cs" />
     <Compile Include="Constants.cs" />
-    <Compile Include="FeedListItem.xaml.cs">
-      <DependentUpon>FeedListItem.xaml</DependentUpon>
+    <Compile Include="DataBinding\GeneratorIncrementalLoadingClass.cs" />
+    <Compile Include="DataBinding\IncrementalLoadingBase.cs" />
+    <Compile Include="UI\FeedListViewItem.xaml.cs">
+      <DependentUpon>FeedListViewItem.xaml</DependentUpon>
     </Compile>
-    <Compile Include="FeedDetailsListItem.xaml.cs">
-      <DependentUpon>FeedDetailsListItem.xaml</DependentUpon>
+    <Compile Include="UI\FeedDetailsListViewItem.xaml.cs">
+      <DependentUpon>FeedDetailsListViewItem.xaml</DependentUpon>
     </Compile>
     <Compile Include="FeedManager.cs" />
-    <Compile Include="FeedUrlDialog.xaml.cs">
+    <Compile Include="UI\FeedUrlDialog.xaml.cs">
       <DependentUpon>FeedUrlDialog.xaml</DependentUpon>
     </Compile>
-    <Compile Include="MainPage.xaml.cs">
+    <Compile Include="UI\MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Player.cs" />
-    <Compile Include="PlayerControl.xaml.cs">
+    <Compile Include="UI\PlayerControl.xaml.cs">
       <DependentUpon>PlayerControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -121,23 +123,23 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Page Include="FeedListItem.xaml">
+    <Page Include="UI\FeedListViewItem.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="FeedDetailsListItem.xaml">
+    <Page Include="UI\FeedDetailsListViewItem.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="FeedUrlDialog.xaml">
+    <Page Include="UI\FeedUrlDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="MainPage.xaml">
+    <Page Include="UI\MainPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="PlayerControl.xaml">
+    <Page Include="UI\PlayerControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
