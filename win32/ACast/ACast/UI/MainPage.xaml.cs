@@ -177,16 +177,27 @@ namespace ACast
             }), null);
         }
 
-        private void feedActivatedAsync()
+        private FeedDetailsListViewItem getItem(int count)
         {
-            feedItems = new GeneratorIncrementalLoadingClass<FeedDetailsListViewItem>(
-                (uint)FeedManager.Instance.CurrentFeedItems.Count, 
-                (count) => {
-                    var feedItem = FeedManager.Instance.CurrentFeedItems[count];
-                    return new FeedDetailsListViewItem(feedItem);
-                }
-            );
-            feedItemsListView.ItemsSource = feedItems;           
+            //Debug.WriteLine(count);
+            var feedItem = FeedManager.Instance.CurrentFeedItems[count];
+            return new FeedDetailsListViewItem(feedItem);
+        }
+
+        void feedActivatedAsync()
+        {
+            FeedManager.Instance.FeedActivatedAsync -= feedActivatedAsync;
+
+            context.Post(new SendOrPostCallback((o) =>
+            {
+                Debug.WriteLine(FeedManager.Instance.CurrentFeedItems.Count.ToString());
+                feedItems = new GeneratorIncrementalLoadingClass<FeedDetailsListViewItem>(
+                    (uint)FeedManager.Instance.CurrentFeedItems.Count,
+                    getItem
+                );
+                feedItemsListView.ItemsSource = feedItems;
+                feedItems.LoadMoreItemsAsync(20);
+            }), null);
         }
 
         /// <summary>
