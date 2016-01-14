@@ -11,24 +11,13 @@
     <Page.BottomAppBar>
 
         <CommandBar>
+            <CommandBar.SecondaryCommands>
+                <AppBarButton x:Name="removeFeedsButton" Label="Remove Feeds"/>
+                <AppBarButton x:Name="clearAllButton" Label="Clear All"/>
+            </CommandBar.SecondaryCommands>
 
 
-            <AppBarButton x:Name="editFeedsButton" Icon="Edit" Label="Edit Feeds">
-                <AppBarButton.Flyout>
-                    <local:CustomFlyout Placement="Full">
-                        <Grid VerticalAlignment="Top">
-                            <Grid.RowDefinitions>
-                                <RowDefinition/>
-                                <RowDefinition/>
-                                <RowDefinition/>                                
-                            </Grid.RowDefinitions>
-                            <Button x:Name="addFeedButton" Content="Add Feed" HorizontalAlignment="Stretch"/>
-                            <Button x:Name="removeFeedButton" Grid.Row="1" Content="Remove Feed" HorizontalAlignment="Stretch"/>
-                            <Button x:Name="clearAllButton" Grid.Row="2" Content="Clear All" HorizontalAlignment="Stretch"/>
-                        </Grid>
-                    </local:CustomFlyout>
-                </AppBarButton.Flyout>
-            </AppBarButton>
+            <AppBarButton x:Name="addFeedButton" Icon="Add" Label="Edit Feeds"/>
             <AppBarButton x:Name="playButton" Icon="Play" Label="Play"/>
             <AppBarButton x:Name="playerControlButton" Label="Player" Icon="Audio">
                 <AppBarButton.Flyout>
@@ -50,12 +39,9 @@
             <ColumnDefinition Width="107*"/>
             <ColumnDefinition Width="293*"/>
         </Grid.ColumnDefinitions>
-        <ListView x:Name="feedListView" IsItemClickEnabled="True" Margin="0,0,4.667,0" Grid.RowSpan="2">
-
-        </ListView>
+        <ListView x:Name="feedListView" IsItemClickEnabled="True" Margin="0,0,4.667,0" Grid.RowSpan="2"/>
         <ListView x:Name="feedItemsListView" IsItemClickEnabled="True" Grid.Column="1" Grid.Row="1" Margin="0.333,2.333,0,-1"/>
         <AppBarButton x:Name="refreshButton" Grid.Column="1" HorizontalAlignment="Right" Icon="Refresh" Label="" VerticalAlignment="Stretch" Width="80" Margin="0,0,0,512" Grid.RowSpan="2"/>
-
-
+       
     </Grid>
 </Page>

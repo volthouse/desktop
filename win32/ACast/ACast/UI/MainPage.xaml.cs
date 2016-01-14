@@ -60,14 +60,12 @@ namespace ACast
             playButton.Click += playButton_Click;
 
             addFeedButton.Click += addFeedButton_Click;
-            removeFeedButton.Click += removeFeedButton_Click;
+            removeFeedsButton.Click += removeFeedsButton_Click;
             clearAllButton.Click += cleanallButton_Click;
 
             playerControlButton.Click += playerControlButton_Click;
-            editFeedsButton.Click += editFeedsButton_Click;
 
             refreshButton.Click += RefreshButton_Click;
-
         }        
 
         async private void RefreshButton_Click(object sender, RoutedEventArgs e)
@@ -103,18 +101,6 @@ namespace ACast
             }
         }
 
-        void editFeedsButton_Click(object sender, RoutedEventArgs e)
-        {
-            CustomFlyout flyout = editFeedsButton.Flyout as CustomFlyout;
-            if (flyout != null)
-            {
-                if (flyout.IsOpen)
-                {
-                    flyout.Hide();
-                }
-            }
-        }
-
         async void addFeedButton_Click(object sender, RoutedEventArgs e)
         {
             var newFeedUrlDlg = new FeedUrlDialog();
@@ -124,7 +110,7 @@ namespace ACast
             FeedManager.Instance.LoadFeedListAsync();
         }
 
-        void removeFeedButton_Click(object sender, RoutedEventArgs e)
+        void removeFeedsButton_Click(object sender, RoutedEventArgs e)
         {
             FeedManager.Instance.FeedListDeletedAsync += FeedListDeletedAsync;
             FeedManager.Instance.DeleteFeedList();
