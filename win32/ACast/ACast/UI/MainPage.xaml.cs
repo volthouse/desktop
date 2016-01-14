@@ -59,31 +59,16 @@ namespace ACast
             playButton.Visibility = Visibility.Collapsed;
             playButton.Click += playButton_Click;
 
-            addFeedFlyout.Click += addFeedFlyout_Click;
-            
-            removeFeedFlyout.Click += removeFeedFlyout_Click;
-            
-            playerControlButton.Click += playerControlButton_Click;
+            addFeedButton.Click += addFeedButton_Click;
+            removeFeedButton.Click += removeFeedButton_Click;
+            clearAllButton.Click += cleanallButton_Click;
 
-            cleanFlyout.Click += cleanFlyout_Click;
+            playerControlButton.Click += playerControlButton_Click;
+            editFeedsButton.Click += editFeedsButton_Click;
 
             refreshButton.Click += RefreshButton_Click;
 
-            //feedItems = new GeneratorIncrementalLoadingClass<FeedListViewItem>(1000, getItems);
-            //feedItemsListView.ItemsSource = feedItems;
-        }
-
-        FeedDetailsListViewItem getItems(int count)
-        {
-            //var item = new FeedListViewItem();
-            //item.SetText(count.ToString());
-            //return item;
-
-            var feedItem = FeedManager.Instance.CurrentFeedItems[count];
-            var item = new FeedDetailsListViewItem(feedItem);
-
-            return item;
-        }
+        }        
 
         async private void RefreshButton_Click(object sender, RoutedEventArgs e)
         {
@@ -94,7 +79,7 @@ namespace ACast
             FeedManager.Instance.ActiveFeedAsync(currentFeedIdx);
         }
 
-        async void cleanFlyout_Click(object sender, RoutedEventArgs e)
+        async void cleanallButton_Click(object sender, RoutedEventArgs e)
         {
             StorageFolder folder = ApplicationData.Current.LocalFolder;
             foreach (var file in await folder.GetFilesAsync())
@@ -108,7 +93,7 @@ namespace ACast
 
         void playerControlButton_Click(object sender, RoutedEventArgs e)
         {
-            PlayerFlyout flyout = playerControlButton.Flyout as PlayerFlyout;
+            CustomFlyout flyout = playerControlButton.Flyout as CustomFlyout;
             if (flyout != null)
             {
                 if (flyout.IsOpen)
@@ -118,7 +103,19 @@ namespace ACast
             }
         }
 
-        async void addFeedFlyout_Click(object sender, RoutedEventArgs e)
+        void editFeedsButton_Click(object sender, RoutedEventArgs e)
+        {
+            CustomFlyout flyout = editFeedsButton.Flyout as CustomFlyout;
+            if (flyout != null)
+            {
+                if (flyout.IsOpen)
+                {
+                    flyout.Hide();
+                }
+            }
+        }
+
+        async void addFeedButton_Click(object sender, RoutedEventArgs e)
         {
             var newFeedUrlDlg = new FeedUrlDialog();
             await newFeedUrlDlg.ShowAsync();
@@ -127,7 +124,7 @@ namespace ACast
             FeedManager.Instance.LoadFeedListAsync();
         }
 
-        void removeFeedFlyout_Click(object sender, RoutedEventArgs e)
+        void removeFeedButton_Click(object sender, RoutedEventArgs e)
         {
             FeedManager.Instance.FeedListDeletedAsync += FeedListDeletedAsync;
             FeedManager.Instance.DeleteFeedList();
@@ -182,18 +179,14 @@ namespace ACast
 
         private void feedActivatedAsync()
         {
-            feedItems = new GeneratorIncrementalLoadingClass<FeedDetailsListViewItem>((uint)FeedManager.Instance.CurrentFeedItems.Count, getItems);
-            feedItemsListView.ItemsSource = feedItems;
-
-            //FeedManager.Instance.FeedActivatedAsync -= feedActivatedAsync;
-
-            //feedItemsListView.Items.Clear();
-
-            //foreach (var item in FeedManager.Instance.CurrentFeedItems)
-            //{
-            //    FeedDetailsListViewItem detailsItem = new FeedDetailsListViewItem(item);
-            //    feedItemsListView.Items.Add(detailsItem);
-            //}
+            feedItems = new GeneratorIncrementalLoadingClass<FeedDetailsListViewItem>(
+                (uint)FeedManager.Instance.CurrentFeedItems.Count, 
+                (count) => {
+                    var feedItem = FeedManager.Instance.CurrentFeedItems[count];
+                    return new FeedDetailsListViewItem(feedItem);
+                }
+            );
+            feedItemsListView.ItemsSource = feedItems;           
         }
 
         /// <summary>
@@ -247,11 +240,11 @@ namespace ACast
 
     }
 
-    public class PlayerFlyout : Flyout
+    public class CustomFlyout : Flyout
     {
         public bool IsOpen { get; private set; }
 
-        public PlayerFlyout()
+        public CustomFlyout()
         {
             this.Opened += OnOpened;
             this.Closed += OnClosed;

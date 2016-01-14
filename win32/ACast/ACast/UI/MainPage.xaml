@@ -14,21 +14,27 @@
 
 
             <AppBarButton x:Name="editFeedsButton" Icon="Edit" Label="Edit Feeds">
-
                 <AppBarButton.Flyout>
-                    <MenuFlyout>
-                        <MenuFlyoutItem x:Name="addFeedFlyout" Text="Add Feed"/>
-                        <MenuFlyoutItem x:Name="removeFeedFlyout" Text="Remove Feed"/>
-                        <MenuFlyoutItem x:Name="cleanFlyout" Text="Clean"/>
-                    </MenuFlyout>
+                    <local:CustomFlyout Placement="Full">
+                        <Grid VerticalAlignment="Top">
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>                                
+                            </Grid.RowDefinitions>
+                            <Button x:Name="addFeedButton" Content="Add Feed" HorizontalAlignment="Stretch"/>
+                            <Button x:Name="removeFeedButton" Grid.Row="1" Content="Remove Feed" HorizontalAlignment="Stretch"/>
+                            <Button x:Name="clearAllButton" Grid.Row="2" Content="Clear All" HorizontalAlignment="Stretch"/>
+                        </Grid>
+                    </local:CustomFlyout>
                 </AppBarButton.Flyout>
             </AppBarButton>
             <AppBarButton x:Name="playButton" Icon="Play" Label="Play"/>
             <AppBarButton x:Name="playerControlButton" Label="Player" Icon="Audio">
                 <AppBarButton.Flyout>
-                    <local:PlayerFlyout Placement="Full">
+                    <local:CustomFlyout Placement="Full">
                         <local:PlayerControl x:Name="playerControl"/>
-                    </local:PlayerFlyout>
+                    </local:CustomFlyout>
                 </AppBarButton.Flyout>
 
             </AppBarButton>
