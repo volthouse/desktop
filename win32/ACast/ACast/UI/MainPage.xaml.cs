@@ -182,7 +182,7 @@ namespace ACast
                     getItem
                 );
                 feedItemsListView.ItemsSource = feedItems;
-                feedItems.LoadMoreItemsAsync(20);
+                //feedItems.LoadMoreItemsAsync(1);
             }), null);
         }
 

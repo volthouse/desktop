@@ -46,35 +46,19 @@ namespace ACastBackgroundAudioTask
     public sealed class BackgroundAudioTask : IBackgroundTask
     {
 
-        #region Private fields, properties
         private SystemMediaTransportControls systemmediatransportcontrol;
-        private PlaylistManager playlistManager;
         private BackgroundTaskDeferral deferral; // Used to keep task alive
         private ForegroundAppStatus foregroundAppState = ForegroundAppStatus.Unknown; 
         private AutoResetEvent BackgroundTaskStarted = new AutoResetEvent(false);
         private bool backgroundtaskrunning = false;
 
+        private string currentMediaPath;
+
         public BackgroundAudioTask()
         {
 
         }
-        /// <summary>
-        /// Property to hold current playlist
-        /// </summary>
-        private MyPlaylist Playlist
-        {
-            get
-            {
-                if (null == playlistManager)
-                {
-                    playlistManager = new PlaylistManager();
-                }
-                return playlistManager.Current;
-            }
-        }
-        #endregion
 
-        #region IBackgroundTask and IBackgroundTaskInstance Interface Members and handlers
         /// <summary>
         /// The Run method is the entry point of a background task. 
         /// </summary>
@@ -91,8 +75,10 @@ namespace ACastBackgroundAudioTask
             systemmediatransportcontrol.IsEnabled = true;
             systemmediatransportcontrol.IsPauseEnabled = true;
             systemmediatransportcontrol.IsPlayEnabled = true;
-            systemmediatransportcontrol.IsNextEnabled = true;
-            systemmediatransportcontrol.IsPreviousEnabled = true;
+            systemmediatransportcontrol.IsNextEnabled = false;
+            systemmediatransportcontrol.IsPreviousEnabled = false;
+            //systemmediatransportcontrol.IsFastForwardEnabled = true;
+            
 
             // Associate a cancellation and completed handlers with the background task.
             taskInstance.Canceled += new BackgroundTaskCanceledEventHandler(OnCanceled);
@@ -106,9 +92,6 @@ namespace ACastBackgroundAudioTask
 
             //Add handlers for MediaPlayer
             BackgroundMediaPlayer.Current.CurrentStateChanged += Current_CurrentStateChanged;
-
-            //Add handlers for playlist trackchanged
-            Playlist.TrackChanged += playList_TrackChanged;
 
             //Initialize message channel 
             BackgroundMediaPlayer.MessageReceivedFromForeground += BackgroundMediaPlayer_MessageReceivedFromForeground;
@@ -149,7 +132,7 @@ namespace ACastBackgroundAudioTask
             try
             {
                 //save state
-                ApplicationSettingsHelper.SaveSettingsValue(Constants.CurrentTrack, Playlist.CurrentTrackName);
+                ApplicationSettingsHelper.SaveSettingsValue(Constants.CurrentTrack, "Test" /*Playlist.CurrentTrackName*/);
                 ApplicationSettingsHelper.SaveSettingsValue(Constants.Position, BackgroundMediaPlayer.Current.Position.ToString());
                 ApplicationSettingsHelper.SaveSettingsValue(Constants.BackgroundTaskState, Constants.BackgroundTaskCancelled);
                 ApplicationSettingsHelper.SaveSettingsValue(Constants.AppState, Enum.GetName(typeof(ForegroundAppStatus), foregroundAppState));
@@ -157,11 +140,8 @@ namespace ACastBackgroundAudioTask
                 //unsubscribe event handlers
                 systemmediatransportcontrol.ButtonPressed -= systemmediatransportcontrol_ButtonPressed;
                 systemmediatransportcontrol.PropertyChanged -= systemmediatransportcontrol_PropertyChanged;
-                Playlist.TrackChanged -= playList_TrackChanged;
                 
                 //clear objects task cancellation can happen uninterrupted
-                playlistManager.ClearPlaylist();
-                playlistManager = null;
                 BackgroundMediaPlayer.Shutdown(); // shutdown media pipeline
             }
             catch (Exception ex)
@@ -171,9 +151,7 @@ namespace ACastBackgroundAudioTask
             deferral.Complete(); // signals task completion. 
             Debug.WriteLine("MyBackgroundAudioTask Cancel complete...");
         }
-        #endregion
-
-        #region SysteMediaTransportControls related functions and handlers
+        
         /// <summary>
         /// Update UVC using SystemMediaTransPortControl apis
         /// </summary>
@@ -181,7 +159,7 @@ namespace ACastBackgroundAudioTask
         {
             systemmediatransportcontrol.PlaybackStatus = MediaPlaybackStatus.Playing;
             systemmediatransportcontrol.DisplayUpdater.Type = MediaPlaybackType.Music;
-            systemmediatransportcontrol.DisplayUpdater.MusicProperties.Title = Playlist.CurrentTrackName;
+            //systemmediatransportcontrol.DisplayUpdater.MusicProperties.Title = Playlist.CurrentTrackName;
             systemmediatransportcontrol.DisplayUpdater.Update();
         }
 
@@ -217,7 +195,8 @@ namespace ACastBackgroundAudioTask
                         if (!result)
                             throw new Exception("Background Task didnt initialize in time");
                     }
-                    StartPlayback();
+                    //StartPlayback();
+                    BackgroundMediaPlayer.Current.Play();
                     break;
                 case SystemMediaTransportControlsButton.Pause: 
                     Debug.WriteLine("UVC pause button pressed");
@@ -232,104 +211,26 @@ namespace ACastBackgroundAudioTask
                     break;
                 case SystemMediaTransportControlsButton.Next: 
                     Debug.WriteLine("UVC next button pressed");
-                    SkipToNext();
+                    //SkipToNext();
                     break;
                 case SystemMediaTransportControlsButton.Previous: 
                     Debug.WriteLine("UVC previous button pressed");
-                    SkipToPrevious();
+                    //SkipToPrevious();
                     break;
             }
         }
 
         
 
-        #endregion
-
-        #region Playlist management functions and handlers
         /// <summary>
         /// Start playlist and change UVC state
         /// </summary>
 
         private void StartPlayback()
         {
-            try
-            {
-                if (Playlist.CurrentTrackName == string.Empty)
-                {
-                    //If the task was cancelled we would have saved the current track and its position. We will try playback from there
-                    var currenttrackname = ApplicationSettingsHelper.ReadResetSettingsValue(Constants.CurrentTrack);
-                    var currenttrackposition = ApplicationSettingsHelper.ReadResetSettingsValue(Constants.Position);
-                    if (currenttrackname != null)
-                    {
-
-                        if (currenttrackposition == null)
-                        {
-                            // play from start if we dont have position
-                            Playlist.StartTrackAt((string)currenttrackname);
-                        }
-                        else
-                        {
-                            // play from exact position otherwise
-                            Playlist.StartTrackAt((string)currenttrackname, TimeSpan.Parse((string)currenttrackposition));
-                        }
-                    }
-                    else
-                    {
-                        //If we dont have anything, play from beginning of playlist.
-                        Playlist.PlayAllTracks(); //start playback
-                    }
-                }
-                else
-                {
-                    BackgroundMediaPlayer.Current.Play();
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.ToString());
-            }
+            
         }
         
-        /// <summary>
-        /// Fires when playlist changes to a new track
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="args"></param>
-        void playList_TrackChanged(MyPlaylist sender, object args)
-        {
-            UpdateUVCOnNewTrack();
-            ApplicationSettingsHelper.SaveSettingsValue(Constants.CurrentTrack, sender.CurrentTrackName);
-
-            if (foregroundAppState == ForegroundAppStatus.Active)
-            {
-                //Message channel that can be used to send messages to foreground
-                ValueSet message = new ValueSet();
-                message.Add(Constants.Trackchanged, sender.CurrentTrackName);
-                BackgroundMediaPlayer.SendMessageToForeground(message);
-            }
-        }
-
-        /// <summary>
-        /// Skip track and update UVC via SMTC
-        /// </summary>
-        private void SkipToPrevious()
-        {
-            systemmediatransportcontrol.PlaybackStatus = MediaPlaybackStatus.Changing;
-            Playlist.SkipToPrevious();
-        }
-
-        /// <summary>
-        /// Skip track and update UVC via SMTC
-        /// </summary>
-        private void SkipToNext()
-        {
-            systemmediatransportcontrol.PlaybackStatus = MediaPlaybackStatus.Changing;
-            Playlist.SkipToNext();
-        }
-
-        #endregion
-
-        #region Background Media Player Handlers
         void Current_CurrentStateChanged(MediaPlayer sender, object args)
         {
             if (sender.CurrentState == MediaPlayerState.Playing)
@@ -357,7 +258,7 @@ namespace ACastBackgroundAudioTask
                     case Constants.AppSuspended:
                         Debug.WriteLine("App suspending"); // App is suspended, you can save your task state at this point
                         foregroundAppState = ForegroundAppStatus.Suspended;
-                        ApplicationSettingsHelper.SaveSettingsValue(Constants.CurrentTrack, Playlist.CurrentTrackName);
+                        ApplicationSettingsHelper.SaveSettingsValue(Constants.CurrentTrack, "Teset" /*Playlist.CurrentTrackName*/);
                         break;
                     case Constants.AppResumed:
                         Debug.WriteLine("App resuming"); // App is resumed, now subscribe to message channel
@@ -365,25 +266,34 @@ namespace ACastBackgroundAudioTask
                         break;
                     case Constants.StartPlayback: //Foreground App process has signalled that it is ready for playback
                         Debug.WriteLine("Starting Playback");
-                        StartPlayback();
+                        //StartPlayback();
                         break;
                     case Constants.SkipNext: // User has chosen to skip track from app context.
                         Debug.WriteLine("Skipping to next");
-                        SkipToNext();
+                        //SkipToNext();
                         break;
                     case Constants.SkipPrevious: // User has chosen to skip track from app context.
                         Debug.WriteLine("Skipping to previous");
-                        SkipToPrevious();
+                        //SkipToPrevious();
                         break;
                     case Constants.AddTrack:                        
                         var en = e.Data.Values.GetEnumerator();
                         en.MoveNext();
-                        Playlist.Tracks.Add(en.Current.ToString());
+                        //Playlist.Tracks.Add(en.Current.ToString());
+
+                        currentMediaPath = en.Current.ToString();
+                        BackgroundMediaPlayer.Current.AutoPlay = false;
+                        BackgroundMediaPlayer.Current.SetUriSource(new Uri(currentMediaPath));
+                        BackgroundMediaPlayer.Current.Play();
+
+                        systemmediatransportcontrol.PlaybackStatus = MediaPlaybackStatus.Playing;
+                        systemmediatransportcontrol.DisplayUpdater.Type = MediaPlaybackType.Music;
+                        systemmediatransportcontrol.DisplayUpdater.MusicProperties.Title = "Test 1234567890 123456789";
+                        systemmediatransportcontrol.DisplayUpdater.Update();
                         break;
                 }
             }
         }
-        #endregion
 
     }
 }

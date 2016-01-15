@@ -195,7 +195,7 @@ namespace ACast
                 AddMediaPlayerEventHandlers();
                 var backgroundtaskinitializationresult = Window.Current.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
-                    bool result = SererInitialized.WaitOne(2000);
+                    bool result = SererInitialized.WaitOne(10000);
                     //Send message to initiate playback
                     if (result == true)
                     {
@@ -203,9 +203,9 @@ namespace ACast
                         message.Add(Constants.AddTrack, filePath);
                         BackgroundMediaPlayer.SendMessageToBackground(message);
 
-                        message = new ValueSet();
-                        message.Add(Constants.StartPlayback, "0");
-                        BackgroundMediaPlayer.SendMessageToBackground(message);
+                        //message = new ValueSet();
+                        //message.Add(Constants.StartPlayback, "0");
+                        //BackgroundMediaPlayer.SendMessageToBackground(message);
                     }
                     else
                     {

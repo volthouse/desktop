@@ -86,7 +86,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="BackgroundAudioTask.cs" />
-    <Compile Include="PlaylistManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '12.0' ">
