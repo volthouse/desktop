@@ -42,6 +42,7 @@
         <ListView x:Name="feedListView" IsItemClickEnabled="True" Margin="0,0,4.667,0" Grid.RowSpan="2"/>
         <ListView x:Name="feedItemsListView" IsItemClickEnabled="True" Grid.Column="1" Grid.Row="1" Margin="0.333,0.833,0,-1"/>
         <AppBarButton x:Name="refreshButton" Grid.Column="1" HorizontalAlignment="Right" Icon="Refresh" Label="" VerticalAlignment="Stretch" Width="80" Margin="0,0,0,17.167"/>
+        <TextBox x:Name="textBox" Grid.Column="1" HorizontalAlignment="Left" Margin="10.333,12,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="198" Height="77"/>
 
     </Grid>
 </Page>

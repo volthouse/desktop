@@ -10,6 +10,7 @@ using Windows.Foundation.Collections;
 using Windows.Media.Playback;
 using Windows.Storage;
 using Windows.UI.Core;
+using Windows.UI.Popups;
 using Windows.UI.Xaml;
 
 namespace ACast
@@ -41,8 +42,10 @@ namespace ACast
         /// Sends message to background informing app has resumed
         /// Subscribe to MediaPlayer events
         /// </summary>
-        void ForegroundApp_Resuming(object sender, object e)
+        public void ForegroundApp_Resuming(object sender, object e)
         {
+           
+
             ApplicationSettingsHelper.SaveSettingsValue(Constants.AppState, Constants.ForegroundAppActive);
 
             // Verify if the task was running before
@@ -69,6 +72,17 @@ namespace ACast
                 }  
             }
 
+            //if(isMyBackgroundTaskRunning)
+            //{
+            //    var dialog = new MessageDialog("resume: task is running");
+            //    dialog.ShowAsync();
+            //} else
+            //{
+            //    var dialog = new MessageDialog("resume: task not running");
+            //    dialog.ShowAsync();
+            //}
+            
+
         }
 
         /// <summary>
@@ -78,6 +92,8 @@ namespace ACast
         /// </summary>
         void ForegroundApp_Suspending(object sender, Windows.ApplicationModel.SuspendingEventArgs e)
         {
+           
+
             var deferral = e.SuspendingOperation.GetDeferral();
             ValueSet messageDictionary = new ValueSet();
             messageDictionary.Add(Constants.AppSuspended, DateTime.Now.ToString());
@@ -91,7 +107,7 @@ namespace ACast
         /// <summary>
         /// Gets the information about background task is running or not by reading the setting saved by background task
         /// </summary>
-        private bool IsMyBackgroundTaskRunning
+        public bool IsMyBackgroundTaskRunning
         {
             get
             {
@@ -104,7 +120,7 @@ namespace ACast
                     return false;
                 }
                 else
-                {
+                {                   
                     isMyBackgroundTaskRunning = ((String)value).Equals(Constants.BackgroundTaskRunning);
                     return isMyBackgroundTaskRunning;
                 }
@@ -195,11 +211,15 @@ namespace ACast
                 AddMediaPlayerEventHandlers();
                 var backgroundtaskinitializationresult = Window.Current.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
+                    ValueSet message = new ValueSet();
+                    message.Add(Constants.IsRunning, "");
+                    BackgroundMediaPlayer.SendMessageToBackground(message);
+
                     bool result = SererInitialized.WaitOne(10000);
                     //Send message to initiate playback
                     if (result == true)
                     {
-                        var message = new ValueSet();
+                        message = new ValueSet();
                         message.Add(Constants.AddTrack, filePath);
                         BackgroundMediaPlayer.SendMessageToBackground(message);
 
@@ -248,7 +268,7 @@ namespace ACast
         /// <summary>
         /// This event fired when a message is recieved from Background Process
         /// </summary>
-        /*async*/ void BackgroundMediaPlayer_MessageReceivedFromBackground(object sender, MediaPlayerDataReceivedEventArgs e)
+        void BackgroundMediaPlayer_MessageReceivedFromBackground(object sender, MediaPlayerDataReceivedEventArgs e)
         {
             foreach (string key in e.Data.Keys)
             {

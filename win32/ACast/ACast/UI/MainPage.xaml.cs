@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
+using Windows.ApplicationModel.Background;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.Media.Playback;
@@ -85,8 +86,7 @@ namespace ACast
                 await file.DeleteAsync();
             }
 
-            var dialog = new MessageDialog("All files deleted");
-            await dialog.ShowAsync();
+            textBox.Text = "All files deleted";
         }
 
         void playerControlButton_Click(object sender, RoutedEventArgs e)
@@ -135,6 +135,7 @@ namespace ACast
                         playButton.Icon = new SymbolIcon(Symbol.Play);
                         break;
                     case MediaPlayerState.Playing:
+                        playButton.Visibility = Visibility.Visible;
                         playButton.Icon = new SymbolIcon(Symbol.Pause);
                         break;
                     case MediaPlayerState.Stopped:
@@ -200,6 +201,32 @@ namespace ACast
             // Windows.Phone.UI.Input.HardwareButtons.BackPressed event.
             // If you are using the NavigationHelper provided by some templates,
             // this event is handled for you.
+
+            //NavigationHelper nvHelper = new NavigationHelper(this);
+            IReadOnlyDictionary<Guid, IBackgroundTaskRegistration> allTasks = BackgroundTaskRegistration.AllTasks;
+            if (allTasks.Count() == 0)
+            {
+                //lblMessage.Text = "No Task is registered at the moment";
+                textBox.Text = "nav:No Task is registered at the moment";
+            }
+            else//Task already registered
+            {
+                //lblMessage.Text = "Timezoon Task is registered";
+                textBox.Text = "nav:Task is registered";
+                //this.GetTask();
+            }
+
+            var x = Player.Instance.IsMyBackgroundTaskRunning;
+
+            if (x)
+            {
+                textBox.Text = "nav: task is running";
+                Player.Instance.ForegroundApp_Resuming(null, null);
+            }
+            else
+            {
+                textBox.Text = "nav: task not running";
+            }
         }
 
         private void FeedListDeletedAsync()

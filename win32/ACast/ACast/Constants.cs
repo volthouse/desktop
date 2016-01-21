@@ -32,5 +32,6 @@ namespace ACast
         public const string ForegroundAppActive = "Active";
         public const string ForegroundAppSuspended = "Suspended";
         public const string AddTrack = "addtrack";
+        public const string IsRunning = "isrunning";
     }
 }
