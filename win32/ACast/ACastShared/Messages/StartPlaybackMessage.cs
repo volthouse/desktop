@@ -22,4 +22,21 @@ namespace ACastShared.Messages
     public class StartPlaybackMessage
     {
     }
+
+   
+    [DataContract]
+    public class StartTrackMessage
+    {
+        public StartTrackMessage()
+        {
+        }
+
+        public StartTrackMessage(Uri trackId)
+        {
+            this.TrackId = trackId;
+        }
+
+        [DataMember]
+        public Uri TrackId;
+    }
 }

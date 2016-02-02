@@ -297,7 +297,17 @@ namespace ACastBackgroundAudioTask
                         var index = playbackList.Items.ToList().FindIndex(item =>
                             GetTrackId(item).ToString() == (string)currentTrackId);
 
-                        if (currentTrackPosition == null)
+                        if(index < 0)
+                        {
+                            BackgroundMediaPlayer.Current.SetUriSource(new Uri(currentTrackId.ToString()));
+                            var position = TimeSpan.Parse((string)currentTrackPosition);
+                            Debug.WriteLine("StartPlayback: Setting Position " + position);
+                            BackgroundMediaPlayer.Current.Position = position;
+
+                            // Begin playing
+                            BackgroundMediaPlayer.Current.Play();
+
+                        } else if (currentTrackPosition == null)
                         {
                             // Play from start if we dont have position
                             Debug.WriteLine("StartPlayback: Switching to track " + index);
@@ -475,6 +485,17 @@ namespace ACastBackgroundAudioTask
                 smtc.PlaybackStatus = MediaPlaybackStatus.Changing;
                 playbackList.MoveTo((uint)index);
                 return;
+            }
+
+            StartTrackMessage startTrackMessage;
+            if(MessageService.TryParseMessage(e.Data, out startTrackMessage))
+            {
+                var x = new CurrentMediaPlaybackItemChangedEventArgs();
+                x.NewItem = new MediaPlaybackItem();
+                x.NewItem.Source = startTrackMessage.TrackId;
+                PlaybackList_CurrentItemChanged(null, x);
+                BackgroundMediaPlayer.Current.SetUriSource(startTrackMessage.TrackId);
+                BackgroundMediaPlayer.Current.Play();
             }
 
             UpdatePlaylistMessage updatePlaylistMessage;

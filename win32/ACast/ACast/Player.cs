@@ -143,7 +143,32 @@ namespace ACast
         {
             Debug.WriteLine("Play button pressed from App");
             string path = ApplicationData.Current.LocalFolder.Path + @"\" + feedItem.FileName;
-            StartBackgroundAudioTask(path);
+            //StartBackgroundAudioTask(path);
+
+            //var song = e.ClickedItem as SongModel;
+            //Debug.WriteLine("Clicked item from App: " + song.MediaUri.ToString());
+
+            // Start the background task if it wasn't running
+            if (!IsMyBackgroundTaskRunning || MediaPlayerState.Closed == CurrentPlayer.CurrentState)
+            {
+                // First update the persisted start track
+                ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.TrackId, path);
+                ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.Position, new TimeSpan().ToString());
+
+                // Start task
+                StartBackgroundAudioTask(path);
+            }
+            else
+            {
+                // Switch to the selected track
+                MessageService.SendMessageToBackground(new StartTrackMessage(new Uri(path)));
+            }
+
+            if (MediaPlayerState.Paused == CurrentPlayer.CurrentState)
+            {
+                CurrentPlayer.Play();
+            }
+
         }
 
         public void Pause()
@@ -172,10 +197,11 @@ namespace ACast
                 //Send message to initiate playback
                 if (result == true)
                 {
-                    var list = new List<SongModel>();
-                    list.Add(new SongModel() { Title = "Test", MediaUri = new Uri(filePath) });
-                    MessageService.SendMessageToBackground(new UpdatePlaylistMessage(list));
-                    MessageService.SendMessageToBackground(new StartPlaybackMessage());
+                    //var list = new List<SongModel>();
+                    //list.Add(new SongModel() { Title = "Test", MediaUri = new Uri(filePath) });
+                    //MessageService.SendMessageToBackground(new UpdatePlaylistMessage(list));
+                    //MessageService.SendMessageToBackground(new StartPlaybackMessage());
+                    MessageService.SendMessageToBackground(new StartTrackMessage(new Uri(filePath)));
                 }
                 else
                 {
