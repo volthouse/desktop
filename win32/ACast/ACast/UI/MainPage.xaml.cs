@@ -1,35 +1,12 @@
-﻿using BackgroundAudioShared;
-using BackgroundAudioShared.Messages;
-using DataBinding;
+﻿using DataBinding;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Xml;
-using System.Xml.Linq;
-using System.Xml.Serialization;
-using Windows.ApplicationModel.Background;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Windows.Media.Playback;
 using Windows.Storage;
-using Windows.Storage.Streams;
-using Windows.UI.Core;
-using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
-using Windows.Web.Syndication;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=391641
 
@@ -44,9 +21,6 @@ namespace ACast
         private int currentFeedIdx = 0;
         private GeneratorIncrementalLoadingClass<FeedDetailsListViewItem> feedItems;
 
-        private bool _isMyBackgroundTaskRunning = false;
-        private AutoResetEvent backgroundAudioTaskStarted;
-        const int RPC_S_SERVER_UNAVAILABLE = -2147023174; // 0x800706BA
 
         public MainPage()
         {
@@ -211,160 +185,19 @@ namespace ACast
             Application.Current.Suspending += Current_Suspending;
             Application.Current.Resuming += Current_Resuming;
 
-            //NavigationHelper nvHelper = new NavigationHelper(this);
-            IReadOnlyDictionary <Guid, IBackgroundTaskRegistration> allTasks = BackgroundTaskRegistration.AllTasks;
-            if (allTasks.Count() == 0)
-            {
-                //lblMessage.Text = "No Task is registered at the moment";
-                textBox.Text = "nav:No Task is registered at the moment";
-            }
-            else//Task already registered
-            {
-                //lblMessage.Text = "Timezoon Task is registered";
-                textBox.Text = "nav:Task is registered";
-                //this.GetTask();
-            }
-
-            var x = Player.Instance.IsMyBackgroundTaskRunning;
-
-            if (x)
-            {
-                textBox.Text = "nav: task is running";
-                Player.Instance.ForegroundApp_Resuming(null, null);
-            }
-            else
-            {
-                textBox.Text = "nav: task not running";
-            }
-        }
-
-        private void ResetAfterLostBackground()
-        {
-            BackgroundMediaPlayer.Shutdown();
-            _isMyBackgroundTaskRunning = false;
-            backgroundAudioTaskStarted.Reset();
-            //prevButton.IsEnabled = true;
-            //nextButton.IsEnabled = true;
-            ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.BackgroundTaskState, BackgroundTaskState.Unknown.ToString());
-            playButton.Content = "| |";
-
-            try
-            {
-                BackgroundMediaPlayer.MessageReceivedFromBackground += BackgroundMediaPlayer_MessageReceivedFromBackground;
-            }
-            catch (Exception ex)
-            {
-                if (ex.HResult == RPC_S_SERVER_UNAVAILABLE)
-                {
-                    throw new Exception("Failed to get a MediaPlayer instance.");
-                }
-                else
-                {
-                    throw;
-                }
-            }
-        }
-
-        async void BackgroundMediaPlayer_MessageReceivedFromBackground(object sender, MediaPlayerDataReceivedEventArgs e)
-        {
-            TrackChangedMessage trackChangedMessage;
-            if (MessageService.TryParseMessage(e.Data, out trackChangedMessage))
-            {
-                // When foreground app is active change track based on background message
-                await this.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-                {
-                    // If playback stopped then clear the UI
-                    //if (trackChangedMessage.TrackId == null)
-                    //{
-                    //    playlistView.SelectedIndex = -1;
-                    //    albumArt.Source = null;
-                    //    txtCurrentTrack.Text = string.Empty;
-                    //    prevButton.IsEnabled = false;
-                    //    nextButton.IsEnabled = false;
-                    //    return;
-                    //}
-
-                    //var songIndex = playlistView.GetSongIndexById(trackChangedMessage.TrackId);
-                    //var song = playlistView.Songs[songIndex];
-
-                    //// Update list UI
-                    //playlistView.SelectedIndex = songIndex;
-
-                    //// Update the album art
-                    //albumArt.Source = albumArtCache[song.AlbumArtUri.ToString()];
-
-                    //// Update song title
-                    //txtCurrentTrack.Text = song.Title;
-
-                    //// Ensure track buttons are re-enabled since they are disabled when pressed
-                    //prevButton.IsEnabled = true;
-                    //nextButton.IsEnabled = true;
-                });
-                return;
-            }
-
-            BackgroundAudioTaskStartedMessage backgroundAudioTaskStartedMessage;
-            if (MessageService.TryParseMessage(e.Data, out backgroundAudioTaskStartedMessage))
-            {
-                // StartBackgroundAudioTask is waiting for this signal to know when the task is up and running
-                // and ready to receive messages
-                Debug.WriteLine("BackgroundAudioTask started");
-                backgroundAudioTaskStarted.Set();
-                return;
-            }
-        }
-
-        private bool IsMyBackgroundTaskRunning
-        {
-            get
-            {
-                if (_isMyBackgroundTaskRunning)
-                    return true;
-
-                string value = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.BackgroundTaskState) as string;
-                if (value == null)
-                {
-                    return false;
-                }
-                else
-                {
-                    try
-                    {
-                        _isMyBackgroundTaskRunning = EnumHelper.Parse<BackgroundTaskState>(value) == BackgroundTaskState.Running;
-                    }
-                    catch (ArgumentException)
-                    {
-                        _isMyBackgroundTaskRunning = false;
-                    }
-                    return _isMyBackgroundTaskRunning;
-                }
-            }
+            Player.Instance.Dispatcher = this.Dispatcher;
+            
         }
 
         private void Current_Resuming(object sender, object e)
         {
-            throw new NotImplementedException();
+            Player.Instance.Dispatcher = this.Dispatcher;
+            Player.Instance.ForegroundAppResuming();
         }
 
         private void Current_Suspending(object sender, Windows.ApplicationModel.SuspendingEventArgs e)
         {
-            var deferral = e.SuspendingOperation.GetDeferral();
-
-            // Only if the background task is already running would we do these, otherwise
-            // it would trigger starting up the background task when trying to suspend.
-            if (IsMyBackgroundTaskRunning)
-            {
-                // Stop handling player events immediately
-                //RemoveMediaPlayerEventHandlers();
-
-                // Tell the background task the foreground is suspended
-                MessageService.SendMessageToBackground(new AppSuspendedMessage());
-            }
-
-            // Persist that the foreground app is suspended
-            ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.AppState, AppState.Suspended.ToString());
-
-            deferral.Complete();
+            Player.Instance.ForegroundAppSuspending(e.SuspendingOperation.GetDeferral());
         }
 
         private void FeedListDeletedAsync()

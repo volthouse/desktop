@@ -16,7 +16,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BackgroundAudioShared
+namespace ACastShared
 {
     /// <summary>
     /// Simple representation for songs in a playlist that can be used both for

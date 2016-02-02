@@ -18,7 +18,7 @@ using System.Threading.Tasks;
 using Windows.Foundation.Collections;
 using Windows.Media.Playback;
 
-namespace BackgroundAudioShared.Messages
+namespace ACastShared.Messages
 {
     /// <summary>
     /// MessageService makes it easy to send strongly typed messages

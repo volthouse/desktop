@@ -15,7 +15,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BackgroundAudioShared
+namespace ACastShared
 {
     /// <summary>
     /// Simple helper for converting a string value to

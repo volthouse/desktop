@@ -89,6 +89,7 @@
     <Compile Include="EnumHelper.cs" />
     <Compile Include="JsonHelper.cs" />
     <Compile Include="MediaPlaybackItem.cs" />
+    <Compile Include="MediaPlaybackList.cs" />
     <Compile Include="Messages\AppResumedMessage.cs" />
     <Compile Include="Messages\AppSuspendedMessage.cs" />
     <Compile Include="Messages\BackgroundAudioTaskStartedMessage.cs" />

@@ -18,7 +18,7 @@ using System.Runtime.Serialization.Json;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BackgroundAudioShared
+namespace ACastShared
 {
     /// <summary>
     /// Simple JSON serializer / deserializer for passing messages

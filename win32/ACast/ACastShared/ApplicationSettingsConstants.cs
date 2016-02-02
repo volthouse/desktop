@@ -14,7 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace BackgroundAudioShared
+namespace ACastShared
 {
     /// <summary>
     /// Collection of string constants used in the entire solution. This file is shared for all projects

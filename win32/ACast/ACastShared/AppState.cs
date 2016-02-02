@@ -15,7 +15,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BackgroundAudioShared
+namespace ACastShared
 {
     public enum AppState
     {

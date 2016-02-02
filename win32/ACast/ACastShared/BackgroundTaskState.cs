@@ -15,7 +15,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BackgroundAudioShared
+namespace ACastShared
 {
     /// <summary>
     /// Indicates the state of the background task.

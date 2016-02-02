@@ -1,47 +1,39 @@
-﻿using BackgroundAudioShared;
-using BackgroundAudioShared.Messages;
+﻿using ACastShared;
+using ACastShared.Messages;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Windows.Media.Playback;
 using Windows.Storage;
 using Windows.UI.Core;
-using Windows.UI.Popups;
 using Windows.UI.Xaml;
 
 namespace ACast
 {
     public sealed class Player
     {
-        private AutoResetEvent SererInitialized;
-        private bool isMyBackgroundTaskRunning = false;
         private bool _isMyBackgroundTaskRunning = false;
         private AutoResetEvent backgroundAudioTaskStarted;
-
+        
         public static Player Instance = new Player();
 
         public event EventHandler<MediaPlayerState> StateChanged;
 
         const int RPC_S_SERVER_UNAVAILABLE = -2147023174; // 0x800706BA
 
-        public MediaPlayerState State {
+        public CoreDispatcher Dispatcher;
+
+        public MediaPlayerState State
+        {
             get { return BackgroundMediaPlayer.Current.CurrentState; }
         }
 
         public Player()
         {
-            SererInitialized = new AutoResetEvent(false);
             backgroundAudioTaskStarted = new AutoResetEvent(false);
-
-            App.Current.Suspending += ForegroundApp_Suspending;
-            App.Current.Resuming += ForegroundApp_Resuming;
-
+            Dispatcher = Window.Current.Dispatcher;
         }
 
 
@@ -72,52 +64,23 @@ namespace ACast
             }
         }
 
-        #region Foreground App Lifecycle Handlers
         /// <summary>
         /// Sends message to background informing app has resumed
         /// Subscribe to MediaPlayer events
         /// </summary>
-        public void ForegroundApp_Resuming(object sender, object e)
+        public void ForegroundAppResuming()
         {
-           
+            ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.AppState, AppState.Active.ToString());
 
-            ApplicationSettingsHelper.SaveSettingsValue(Constants.AppState, Constants.ForegroundAppActive);
-
-            // Verify if the task was running before
+            // Verify the task is running
             if (IsMyBackgroundTaskRunning)
             {
-                //if yes, reconnect to media play handlers
+                // If yes, it's safe to reconnect to media play handlers
                 AddMediaPlayerEventHandlers();
 
-                //send message to background task that app is resumed, so it can start sending notifications
-                ValueSet messageDictionary = new ValueSet();
-                messageDictionary.Add(Constants.AppResumed, DateTime.Now.ToString());
-                BackgroundMediaPlayer.SendMessageToBackground(messageDictionary);                              
-
-                if (StateChanged != null)
-                {
-                    StateChanged(this, BackgroundMediaPlayer.Current.CurrentState);
-                }               
+                // Send message to background task that app is resumed so it can start sending notifications again
+                MessageService.SendMessageToBackground(new AppResumedMessage());
             }
-            else
-            {
-                if (StateChanged != null)
-                {
-                    StateChanged(this, MediaPlayerState.Closed);
-                }  
-            }
-
-            //if(isMyBackgroundTaskRunning)
-            //{
-            //    var dialog = new MessageDialog("resume: task is running");
-            //    dialog.ShowAsync();
-            //} else
-            //{
-            //    var dialog = new MessageDialog("resume: task not running");
-            //    dialog.ShowAsync();
-            //}
-            
-
         }
 
         /// <summary>
@@ -125,19 +88,24 @@ namespace ACast
         /// Stop clock and slider when suspending
         /// Unsubscribe handlers for MediaPlayer events
         /// </summary>
-        void ForegroundApp_Suspending(object sender, Windows.ApplicationModel.SuspendingEventArgs e)
+        public void ForegroundAppSuspending(Windows.ApplicationModel.SuspendingDeferral deferral)
         {
-           
+            // Only if the background task is already running would we do these, otherwise
+            // it would trigger starting up the background task when trying to suspend.
+            if (IsMyBackgroundTaskRunning)
+            {
+                // Stop handling player events immediately
+                RemoveMediaPlayerEventHandlers();
 
-            var deferral = e.SuspendingOperation.GetDeferral();
-            ValueSet messageDictionary = new ValueSet();
-            messageDictionary.Add(Constants.AppSuspended, DateTime.Now.ToString());
-            BackgroundMediaPlayer.SendMessageToBackground(messageDictionary);
-            RemoveMediaPlayerEventHandlers();
-            ApplicationSettingsHelper.SaveSettingsValue(Constants.AppState, Constants.ForegroundAppSuspended);
+                // Tell the background task the foreground is suspended
+                MessageService.SendMessageToBackground(new AppSuspendedMessage());
+            }
+
+            // Persist that the foreground app is suspended
+            ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.AppState, AppState.Suspended.ToString());
+
             deferral.Complete();
         }
-        #endregion
 
         /// <summary>
         /// Gets the information about background task is running or not by reading the setting saved by background task
@@ -146,49 +114,36 @@ namespace ACast
         {
             get
             {
-                if (isMyBackgroundTaskRunning)
+                if (_isMyBackgroundTaskRunning)
                     return true;
 
-                object value = ApplicationSettingsHelper.ReadResetSettingsValue(Constants.BackgroundTaskState);
+                string value = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.BackgroundTaskState) as string;
                 if (value == null)
                 {
                     return false;
                 }
                 else
-                {                   
-                    isMyBackgroundTaskRunning = ((String)value).Equals(Constants.BackgroundTaskRunning);
-                    return isMyBackgroundTaskRunning;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Read current track information from application settings
-        /// </summary>
-        public string CurrentTrack
-        {
-            get
-            {
-                object value = ApplicationSettingsHelper.ReadResetSettingsValue(Constants.CurrentTrack);
-                if (value != null)
                 {
-                    return (String)value;
+                    try
+                    {
+                        _isMyBackgroundTaskRunning = EnumHelper.Parse<BackgroundTaskState>(value) == BackgroundTaskState.Running;
+                    }
+                    catch (ArgumentException)
+                    {
+                        _isMyBackgroundTaskRunning = false;
+                    }
+                    return _isMyBackgroundTaskRunning;
                 }
-                else
-                    return String.Empty;
             }
         }
 
-        public void Test()
-        {
 
-        }
 
         public void Play(FeedItem feedItem)
         {
             Debug.WriteLine("Play button pressed from App");
             string path = ApplicationData.Current.LocalFolder.Path + @"\" + feedItem.FileName;
-            StartBackgroundAudioTask(path);            
+            StartBackgroundAudioTask(path);
         }
 
         public void Pause()
@@ -207,91 +162,11 @@ namespace ACast
             }
         }
 
-        #region Media Playback Helper methods
-        /// <summary>
-        /// Unsubscribes to MediaPlayer events. Should run only on suspend
-        /// </summary>
-        //private void RemoveMediaPlayerEventHandlers()
-        //{
-        //    BackgroundMediaPlayer.Current.CurrentStateChanged -= this.MediaPlayer_CurrentStateChanged;
-        //    BackgroundMediaPlayer.MessageReceivedFromBackground -= this.BackgroundMediaPlayer_MessageReceivedFromBackground;
-        //}
-
-        /// <summary>
-        /// Subscribes to MediaPlayer events
-        /// </summary>
-        //private void AddMediaPlayerEventHandlers()
-        //{
-        //    BackgroundMediaPlayer.Current.CurrentStateChanged += this.MediaPlayer_CurrentStateChanged;
-        //    BackgroundMediaPlayer.MessageReceivedFromBackground += this.BackgroundMediaPlayer_MessageReceivedFromBackground;
-        //}
-
-        /// <summary>
-        /// Initialize Background Media Player Handlers and starts playback
-        /// </summary>
-        //private void StartBackgroundAudioTask(string filePath)
-        //{
-        //    if (isMyBackgroundTaskRunning)
-        //    {
-        //        var message = new ValueSet();
-        //        message.Add(Constants.AddTrack, filePath);
-        //        BackgroundMediaPlayer.SendMessageToBackground(message);
-
-        //        message = new ValueSet();
-        //        message.Add(Constants.StartPlayback, "0");
-        //        BackgroundMediaPlayer.SendMessageToBackground(message);
-        //    }
-        //    else
-        //    {
-        //        AddMediaPlayerEventHandlers();
-        //        var backgroundtaskinitializationresult = Window.Current.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-        //        {
-        //            ValueSet message = new ValueSet();
-        //            message.Add(Constants.IsRunning, "");
-        //            BackgroundMediaPlayer.SendMessageToBackground(message);
-
-        //            bool result = SererInitialized.WaitOne(10000);
-        //            //Send message to initiate playback
-        //            if (result == true)
-        //            {
-        //                message = new ValueSet();
-        //                message.Add(Constants.AddTrack, filePath);
-        //                BackgroundMediaPlayer.SendMessageToBackground(message);
-
-        //                //message = new ValueSet();
-        //                //message.Add(Constants.StartPlayback, "0");
-        //                //BackgroundMediaPlayer.SendMessageToBackground(message);
-        //            }
-        //            else
-        //            {
-        //                throw new Exception("Background Audio Task didn't start in expected time");
-        //            }
-        //        }
-        //        );
-        //        backgroundtaskinitializationresult.Completed = new AsyncActionCompletedHandler(BackgroundTaskInitializationCompleted);
-        //    }
-        //}
-
-        //private void BackgroundTaskInitializationCompleted(IAsyncAction action, AsyncStatus status)
-        //{
-        //    if (status == AsyncStatus.Completed)
-        //    {
-        //        Debug.WriteLine("Background Audio Task initialized");
-        //    }
-        //    else if (status == AsyncStatus.Error)
-        //    {
-        //        Debug.WriteLine("Background Audio Task could not initialized due to an error ::" + action.ErrorCode.ToString());
-        //    }
-        //}
-
-        /// <summary>
-        /// Initialize Background Media Player Handlers and starts playback
-        /// </summary>
         private void StartBackgroundAudioTask(string filePath)
         {
             AddMediaPlayerEventHandlers();
 
-            var startResult = Window.Current.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            var startResult = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
                 bool result = backgroundAudioTaskStarted.WaitOne(10000);
                 //Send message to initiate playback
@@ -328,7 +203,7 @@ namespace ACast
             if (MessageService.TryParseMessage(e.Data, out trackChangedMessage))
             {
                 // When foreground app is active change track based on background message
-                await Window.Current.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
                     // If playback stopped then clear the UI
                     if (trackChangedMessage.TrackId == null)
@@ -418,9 +293,7 @@ namespace ACast
                 }
             }
         }
-        #endregion
 
-        #region Background MediaPlayer Event handlers
         /// <summary>
         /// MediaPlayer state changed event handlers. 
         /// Note that we can subscribe to events even if Media Player is playing media in background
@@ -429,13 +302,19 @@ namespace ACast
         /// <param name="args"></param>
         /*async*/
         void MediaPlayer_CurrentStateChanged(MediaPlayer sender, object args)
-        {           
+        {
             if (StateChanged != null)
             {
                 StateChanged(this, sender.CurrentState);
             }
         }
 
+        /// <summary>
+        /// You should never cache the MediaPlayer and always call Current. It is possible
+        /// for the background task to go away for several different reasons. When it does
+        /// an RPC_S_SERVER_UNAVAILABLE error is thrown. We need to reset the foreground state
+        /// and restart the background task.
+        /// </summary>
         private MediaPlayer CurrentPlayer
         {
             get
@@ -474,32 +353,5 @@ namespace ACast
                 return mp;
             }
         }
-        /// <summary>
-        /// This event fired when a message is recieved from Background Process
-        /// </summary>
-        //void BackgroundMediaPlayer_MessageReceivedFromBackground(object sender, MediaPlayerDataReceivedEventArgs e)
-        //{
-        //    foreach (string key in e.Data.Keys)
-        //    {
-        //        switch (key)
-        //        {
-        //            case Constants.Trackchanged:
-        //                //When foreground app is active change track based on background message
-        //                //await this.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-        //                //{
-        //                //    txtCurrentTrack.Text = (string)e.Data[key];
-        //                //}
-        //                //);
-        //                break;
-        //            case Constants.BackgroundTaskStarted:
-        //                //Wait for Background Task to be initialized before starting playback
-        //                Debug.WriteLine("Background Task started");
-        //                SererInitialized.Set();
-        //                break;
-        //        }
-        //    }
-        //}
-
-        #endregion
     }
 }
