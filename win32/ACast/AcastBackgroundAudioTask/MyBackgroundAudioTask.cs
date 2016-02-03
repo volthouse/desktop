@@ -51,20 +51,20 @@ namespace ACastBackgroundAudioTask
         private const string TitleKey = "title";
         private const string AlbumArtKey = "albumart";
         private SystemMediaTransportControls smtc;
-        private MediaPlaybackList playbackList = new MediaPlaybackList();
         private BackgroundTaskDeferral deferral; // Used to keep task alive
         private AppState foregroundAppState = AppState.Unknown;
         private ManualResetEvent backgroundTaskStarted = new ManualResetEvent(false);
         private bool playbackStartedPreviously = false;
+        private MediaPlaybackItem currentPlaybackItem;
         #endregion
 
         #region Helper methods
         Uri GetCurrentTrackId()
         {
-            if (playbackList == null)
+            if (currentPlaybackItem == null)
                 return null;
 
-            return GetTrackId(playbackList.CurrentItem);
+            return GetTrackId(currentPlaybackItem);
         }
 
         Uri GetTrackId(MediaPlaybackItem item)
@@ -161,13 +161,6 @@ namespace ACastBackgroundAudioTask
                 ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.BackgroundTaskState, BackgroundTaskState.Canceled.ToString());
                 ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.AppState, Enum.GetName(typeof(AppState), foregroundAppState));
 
-                // unsubscribe from list changes
-                if (playbackList != null)
-                {
-                    playbackList.CurrentItemChanged -= PlaybackList_CurrentItemChanged;
-                    playbackList = null;
-                }
-
                 // unsubscribe event handlers
                 BackgroundMediaPlayer.MessageReceivedFromForeground -= BackgroundMediaPlayer_MessageReceivedFromForeground;
                 smtc.ButtonPressed -= smtc_ButtonPressed;
@@ -262,11 +255,11 @@ namespace ACastBackgroundAudioTask
                     break;
                 case SystemMediaTransportControlsButton.Next:
                     Debug.WriteLine("UVC next button pressed");
-                    SkipToNext();
+                    //SkipToNext();
                     break;
                 case SystemMediaTransportControlsButton.Previous:
                     Debug.WriteLine("UVC previous button pressed");
-                    SkipToPrevious();
+                    //SkipToPrevious();
                     break;
             }
         }
@@ -293,61 +286,12 @@ namespace ACastBackgroundAudioTask
                     var currentTrackPosition = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.Position);
                     if (currentTrackId != null)
                     {
-                        // Find the index of the item by name
-                        var index = playbackList.Items.ToList().FindIndex(item =>
-                            GetTrackId(item).ToString() == (string)currentTrackId);
 
-                        if(index < 0)
-                        {
-                            BackgroundMediaPlayer.Current.SetUriSource(new Uri(currentTrackId.ToString()));
-                            var position = TimeSpan.Parse((string)currentTrackPosition);
-                            Debug.WriteLine("StartPlayback: Setting Position " + position);
-                            BackgroundMediaPlayer.Current.Position = position;
-
-                            // Begin playing
-                            BackgroundMediaPlayer.Current.Play();
-
-                        } else if (currentTrackPosition == null)
-                        {
-                            // Play from start if we dont have position
-                            Debug.WriteLine("StartPlayback: Switching to track " + index);
-                            //playbackList.MoveTo((uint)index);
-
-                            // Begin playing
-                            BackgroundMediaPlayer.Current.Play();
-                        }
-                        else
-                        {
-                            // Play from exact position otherwise
-                            TypedEventHandler<MediaPlaybackList, CurrentMediaPlaybackItemChangedEventArgs> handler = null;
-                            handler = (MediaPlaybackList list, CurrentMediaPlaybackItemChangedEventArgs args) =>
-                            {
-                                if (args.NewItem == playbackList.Items[index])
-                                {
-                                    // Unsubscribe because this only had to run once for this item
-                                    playbackList.CurrentItemChanged -= handler;
-
-                                    // Set position
-                                    var position = TimeSpan.Parse((string)currentTrackPosition);
-                                    Debug.WriteLine("StartPlayback: Setting Position " + position);
-                                    BackgroundMediaPlayer.Current.Position = position;
-
-                                    // Begin playing
-                                    BackgroundMediaPlayer.Current.Play();
-                                }
-                            };
-                            playbackList.CurrentItemChanged += handler;
-
-                            // Switch to the track which will trigger an item changed event
-                            Debug.WriteLine("StartPlayback: Switching to track " + index);
-                            playbackList.MoveTo((uint)index);
-                        }
+                       
                     }
                     else
                     {
                         // Begin playing
-                        playbackList.MoveTo(0);
-                        BackgroundMediaPlayer.Current.SetUriSource(playbackList.CurrentItem.Source);
                         BackgroundMediaPlayer.Current.Play();
                     }
                 }
@@ -389,23 +333,6 @@ namespace ACastBackgroundAudioTask
                 ApplicationSettingsHelper.SaveSettingsValue(TrackIdKey, currentTrackId == null ? null : currentTrackId.ToString());
         }
 
-        /// <summary>
-        /// Skip track and update UVC via SMTC
-        /// </summary>
-        private void SkipToPrevious()
-        {
-            smtc.PlaybackStatus = MediaPlaybackStatus.Changing;
-            playbackList.MovePrevious();
-        }
-
-        /// <summary>
-        /// Skip track and update UVC via SMTC
-        /// </summary>
-        private void SkipToNext()
-        {
-            smtc.PlaybackStatus = MediaPlaybackStatus.Changing;
-            playbackList.MoveNext();
-        }
         #endregion
 
         #region Background Media Player Handlers
@@ -450,95 +377,23 @@ namespace ACastBackgroundAudioTask
                 return;
             }
 
-            StartPlaybackMessage startPlaybackMessage;
-            if(MessageService.TryParseMessage(e.Data, out startPlaybackMessage))
-            {
-                //Foreground App process has signalled that it is ready for playback
-                Debug.WriteLine("Starting Playback");
-                StartPlayback();
-                return;
-            }
-
-            SkipNextMessage skipNextMessage;
-            if(MessageService.TryParseMessage(e.Data, out skipNextMessage))
-            {
-                // User has chosen to skip track from app context.
-                Debug.WriteLine("Skipping to next");
-                SkipToNext();
-                return;
-            }
-
-            SkipPreviousMessage skipPreviousMessage;
-            if(MessageService.TryParseMessage(e.Data, out skipPreviousMessage))
-            {
-                // User has chosen to skip track from app context.
-                Debug.WriteLine("Skipping to previous");
-                SkipToPrevious();
-                return;
-            }
-
-            TrackChangedMessage trackChangedMessage;
-            if(MessageService.TryParseMessage(e.Data, out trackChangedMessage))
-            {
-                var index = playbackList.Items.ToList().FindIndex(i => i.Source == trackChangedMessage.TrackId);
-                Debug.WriteLine("Skipping to track " + index);
-                smtc.PlaybackStatus = MediaPlaybackStatus.Changing;
-                playbackList.MoveTo((uint)index);
-                return;
-            }
-
             StartTrackMessage startTrackMessage;
             if(MessageService.TryParseMessage(e.Data, out startTrackMessage))
             {
+                currentPlaybackItem = new MediaPlaybackItem();
+                currentPlaybackItem.Source = startTrackMessage.TrackId;
+
                 var x = new CurrentMediaPlaybackItemChangedEventArgs();
-                x.NewItem = new MediaPlaybackItem();
-                x.NewItem.Source = startTrackMessage.TrackId;
+                x.NewItem = currentPlaybackItem;
+
                 PlaybackList_CurrentItemChanged(null, x);
+
                 BackgroundMediaPlayer.Current.SetUriSource(startTrackMessage.TrackId);
                 BackgroundMediaPlayer.Current.Play();
             }
 
-            UpdatePlaylistMessage updatePlaylistMessage;
-            if(MessageService.TryParseMessage(e.Data, out updatePlaylistMessage))
-            {
-                CreatePlaybackList(updatePlaylistMessage.Songs);
-                return;
-            }
         }
 
-        /// <summary>
-        /// Create a playback list from the list of songs received from the foreground app.
-        /// </summary>
-        /// <param name="songs"></param>
-        void CreatePlaybackList(IEnumerable<SongModel> songs)
-        {
-            // Make a new list and enable looping
-            playbackList = new MediaPlaybackList();
-            playbackList.AutoRepeatEnabled = true;
-            // Add handler for future playlist item changes
-            playbackList.CurrentItemChanged += PlaybackList_CurrentItemChanged;
-
-            // Add playback items to the list
-            foreach (var song in songs)
-            {
-                //var source = MediaSource.CreateFromUri(song.MediaUri);
-                //source.CustomProperties[TrackIdKey] = song.MediaUri;
-                //source.CustomProperties[TitleKey] = song.Title;
-                //source.CustomProperties[AlbumArtKey] = song.AlbumArtUri;
-                var item = new MediaPlaybackItem();
-                item.Source = song.MediaUri;
-                playbackList.Items.Add(item);
-            }
-
-            // Don't auto start
-            BackgroundMediaPlayer.Current.AutoPlay = false;
-
-            // Assign the list to the player
-            //BackgroundMediaPlayer.Current.Source = playbackList;
-            //BackgroundMediaPlayer.Current.SetUriSource(playbackList.CurrentItem.Source);
-            //playbackList.MoveTo(0);
-            
-        }
         #endregion
     }
 
