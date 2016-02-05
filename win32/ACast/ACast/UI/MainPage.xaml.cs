@@ -66,7 +66,7 @@ namespace ACast
                 await file.DeleteAsync();
             }
 
-            textBox.Text = "All files deleted";
+            //textBox.Text = "All files deleted";
         }
 
         void playerControlButton_Click(object sender, RoutedEventArgs e)

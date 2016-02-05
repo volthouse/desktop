@@ -6,8 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">    
     <Page.BottomAppBar>
 
         <CommandBar>
@@ -29,20 +28,28 @@
             </AppBarButton>
         </CommandBar>
     </Page.BottomAppBar>
+    <Pivot Title="Pivot">
+        <PivotItem Header="Feeds">
+            <Grid>
+                <ListView x:Name="feedListView" IsItemClickEnabled="True"/>
+            </Grid>            
+        </PivotItem>
+        <PivotItem Header="Items">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="67*"/>
+                    <RowDefinition Height="379*"/>
+                </Grid.RowDefinitions>
+                <AppBarButton x:Name="refreshButton" HorizontalAlignment="Right" Icon="Refresh" Label="" VerticalAlignment="Stretch" Width="80" Margin="0,0,0,66.667"/>
+                <ListView x:Name="feedItemsListView" IsItemClickEnabled="True" Grid.Row="1" Margin="0,0.333,0,-2.167"/>
+            </Grid>
+        </PivotItem>
+        <PivotItem Header="Player">
+            <Grid>
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="99*"/>
-            <RowDefinition Height="481*"/>
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="107*"/>
-            <ColumnDefinition Width="293*"/>
-        </Grid.ColumnDefinitions>
-        <ListView x:Name="feedListView" IsItemClickEnabled="True" Margin="0,0,4.667,0" Grid.RowSpan="2"/>
-        <ListView x:Name="feedItemsListView" IsItemClickEnabled="True" Grid.Column="1" Grid.Row="1" Margin="0.333,0.833,0,-1"/>
-        <AppBarButton x:Name="refreshButton" Grid.Column="1" HorizontalAlignment="Right" Icon="Refresh" Label="" VerticalAlignment="Stretch" Width="80" Margin="0,0,0,17.167"/>
-        <TextBox x:Name="textBox" Grid.Column="1" HorizontalAlignment="Left" Margin="10.333,12,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="198" Height="77"/>
+            </Grid>
+        </PivotItem>
+    </Pivot>
 
-    </Grid>
+
 </Page>
