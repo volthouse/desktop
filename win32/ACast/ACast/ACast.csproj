@@ -82,8 +82,6 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ApplicationSettingsHelper.cs" />
-    <Compile Include="Constants.cs" />
     <Compile Include="DataBinding\GeneratorIncrementalLoadingClass.cs" />
     <Compile Include="DataBinding\IncrementalLoadingBase.cs" />
     <Compile Include="UI\FeedListViewItem.xaml.cs">
