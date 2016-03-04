@@ -5,7 +5,7 @@
     xmlns:local="using:ACast"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d" Height="118" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Width="497.545" VerticalAlignment="Bottom">
+    mc:Ignorable="d" Height="118" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Width="249.167" VerticalAlignment="Bottom">
     <Grid VerticalAlignment="Top" Height="125">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
@@ -18,12 +18,10 @@
             <RowDefinition Height="80*"/>
             <RowDefinition Height="80*"/>
         </Grid.RowDefinitions>
-        <AppBarButton x:Name="previousButton" HorizontalAlignment="Stretch" Icon="Previous" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True" Width="80" />
+        <AppBarButton x:Name="rewardButton" HorizontalAlignment="Stretch" Icon="Back" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True" Width="80"/>
         <AppBarButton x:Name="playButton" HorizontalAlignment="Stretch" Icon="Play" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True"  Grid.Column="1" Width="80"/>
         <AppBarButton x:Name="forwardButton" HorizontalAlignment="Stretch" Icon="Forward" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True"  Grid.Column="2" Width="80"/>
-        <AppBarButton x:Name="backButton" HorizontalAlignment="Stretch" Icon="Back" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True"  Grid.Column="3" Width="80"/>
-        <AppBarButton x:Name="nextButton" HorizontalAlignment="Stretch" Icon="Next" Label="appbarbutton" IsCompact="True" Grid.Column="4" Width="80"/>
-        <Slider x:Name="posSlider" VerticalAlignment="Top" Grid.Row="1" Grid.ColumnSpan="5"/>
+        <Slider x:Name="posSlider" VerticalAlignment="Top" Grid.Row="1" Grid.ColumnSpan="5" Maximum="100" SmallChange="1" StepFrequency="-1"/>
     </Grid>
 
 

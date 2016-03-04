@@ -187,6 +187,27 @@ namespace ACast
             }
         }
 
+        public double RelativePosition {
+            get {
+                double relativePos = BackgroundMediaPlayer.Current.Position.TotalMilliseconds /
+                    BackgroundMediaPlayer.Current.NaturalDuration.TotalMilliseconds;
+                return relativePos * 100;
+            }
+
+            set
+            {
+                MediaPlayerState state = BackgroundMediaPlayer.Current.CurrentState;
+                long relativePos = (long)(BackgroundMediaPlayer.Current.NaturalDuration.Ticks * Math.Min(100, value) / 100);
+                BackgroundMediaPlayer.Current.Position = new TimeSpan(relativePos);
+                // workaround, wenn Pause und position gesetzt wird läuft der Player wieder
+                if (state == MediaPlayerState.Paused)
+                {
+                    BackgroundMediaPlayer.Current.Pause();
+                }
+            }
+        }
+
+
         private void StartBackgroundAudioTask(string filePath)
         {
             AddMediaPlayerEventHandlers();
@@ -280,6 +301,7 @@ namespace ACast
             try
             {
                 BackgroundMediaPlayer.Current.CurrentStateChanged -= this.MediaPlayer_CurrentStateChanged;
+                CurrentPlayer.MediaEnded -= CurrentPlayer_MediaEnded;
                 BackgroundMediaPlayer.MessageReceivedFromBackground -= BackgroundMediaPlayer_MessageReceivedFromBackground;
             }
             catch (Exception ex)
@@ -301,6 +323,7 @@ namespace ACast
         private void AddMediaPlayerEventHandlers()
         {
             CurrentPlayer.CurrentStateChanged += this.MediaPlayer_CurrentStateChanged;
+            CurrentPlayer.MediaEnded += CurrentPlayer_MediaEnded;
 
             try
             {
@@ -318,6 +341,15 @@ namespace ACast
                     throw;
                 }
             }
+        }
+
+        private void CurrentPlayer_MediaEnded(MediaPlayer sender, object args)
+        {
+            //if (StateChanged != null)
+            //{
+            //    StateChanged(this, MediaPlayerState.Stopped);
+            //}
+            //BackgroundMediaPlayer.Current.p
         }
 
         /// <summary>
