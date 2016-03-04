@@ -20,7 +20,6 @@ namespace ACast
         private int currentFeedIdx = 0;
         private GeneratorIncrementalLoadingClass<FeedDetailsListViewItem> feedItems;
 
-
         public MainPage()
         {
             this.InitializeComponent();
@@ -36,16 +35,44 @@ namespace ACast
             FeedManager.Instance.LoadFeedListAsync();
 
             Player.Instance.StateChanged += playerStateChanged;
-            playButton.Visibility = Visibility.Collapsed;
-            playButton.Click += playButton_Click;
 
-            addFeedButton.Click += addFeedButton_Click;
-            removeFeedsButton.Click += removeFeedsButton_Click;
-            clearAllButton.Click += cleanallButton_Click;
+            pivot.PivotItemLoaded += pivot_PivotItemLoaded;
 
-            playerControlButton.Click += playerControlButton_Click;
+            //playButton.Visibility = Visibility.Collapsed;
+            //playButton.Click += playButton_Click;
+
+            //addFeedButton.Click += addFeedButton_Click;
+            //removeFeedsButton.Click += removeFeedsButton_Click;
+            //clearAllButton.Click += cleanallButton_Click;
+
+            //playerControlButton.Click += playerControlButton_Click;
+
+            AddFeedButton.Instance.Click += addFeedButton_Click;
 
             refreshButton.Click += RefreshButton_Click;
+
+        }
+
+        void pivot_PivotItemLoaded(Pivot sender, PivotItemEventArgs args)
+        {
+            if (args.Item.Equals(feedsPivotItem))
+            {
+                this.commandBar.PrimaryCommands.Clear();
+                this.commandBar.PrimaryCommands.Add(AddFeedButton.Instance);
+                this.commandBar.PrimaryCommands.Add(RemoveFeedButton.Instance);
+                this.commandBar.Visibility = Visibility.Visible;
+            }
+            else if (args.Item.Equals(feedDetailsPivotItem))
+            {
+                this.commandBar.PrimaryCommands.Clear();
+                this.commandBar.PrimaryCommands.Add(PlayButton.Instance);
+                this.commandBar.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                this.commandBar.PrimaryCommands.Clear();
+                this.commandBar.Visibility = Visibility.Collapsed;
+            }
         }        
 
         async private void RefreshButton_Click(object sender, RoutedEventArgs e)
@@ -70,14 +97,14 @@ namespace ACast
 
         void playerControlButton_Click(object sender, RoutedEventArgs e)
         {
-            CustomFlyout flyout = playerControlButton.Flyout as CustomFlyout;
-            if (flyout != null)
-            {
-                if (flyout.IsOpen)
-                {
-                    flyout.Hide();
-                }
-            }
+            //CustomFlyout flyout = playerControlButton.Flyout as CustomFlyout;
+            //if (flyout != null)
+            //{
+            //    if (flyout.IsOpen)
+            //    {
+            //        flyout.Hide();
+            //    }
+            //}
         }
 
         async void addFeedButton_Click(object sender, RoutedEventArgs e)
@@ -97,33 +124,33 @@ namespace ACast
 
         void playerStateChanged(object sender, Windows.Media.Playback.MediaPlayerState e)
         {
-            context.Post(new SendOrPostCallback((o) =>
-            {
-                Debug.WriteLine("player state changed:" + e.ToString());
-                switch (e)
-                {
-                    case MediaPlayerState.Buffering:
-                        break;
-                    case MediaPlayerState.Closed:
-                        playButton.Visibility = Visibility.Collapsed;
-                        break;
-                    case MediaPlayerState.Opening:
-                        playButton.Visibility = Visibility.Visible;
-                        break;
-                    case MediaPlayerState.Paused:
-                        playButton.Icon = new SymbolIcon(Symbol.Play);
-                        break;
-                    case MediaPlayerState.Playing:
-                        playButton.Visibility = Visibility.Visible;
-                        playButton.Icon = new SymbolIcon(Symbol.Pause);
-                        break;
-                    case MediaPlayerState.Stopped:
-                        playButton.Visibility = Visibility.Collapsed;
-                        break;
-                    default:
-                        break;
-                }
-            }), null);
+            //context.Post(new SendOrPostCallback((o) =>
+            //{
+            //    Debug.WriteLine("player state changed:" + e.ToString());
+            //    switch (e)
+            //    {
+            //        case MediaPlayerState.Buffering:
+            //            break;
+            //        case MediaPlayerState.Closed:
+            //            playButton.Visibility = Visibility.Collapsed;
+            //            break;
+            //        case MediaPlayerState.Opening:
+            //            playButton.Visibility = Visibility.Visible;
+            //            break;
+            //        case MediaPlayerState.Paused:
+            //            playButton.Icon = new SymbolIcon(Symbol.Play);
+            //            break;
+            //        case MediaPlayerState.Playing:
+            //            playButton.Visibility = Visibility.Visible;
+            //            playButton.Icon = new SymbolIcon(Symbol.Pause);
+            //            break;
+            //        case MediaPlayerState.Stopped:
+            //            playButton.Visibility = Visibility.Collapsed;
+            //            break;
+            //        default:
+            //            break;
+            //    }
+            //}), null);
         }
 
         private void feedListLoadedAsync()
@@ -185,7 +212,6 @@ namespace ACast
             Application.Current.Resuming += Current_Resuming;
 
             Player.Instance.Dispatcher = this.Dispatcher;
-            
         }
 
         private void Current_Resuming(object sender, object e)
@@ -255,4 +281,33 @@ namespace ACast
         }
     }
 
+    public class PlayButton : AppBarButton
+    {
+        public static PlayButton Instance = new PlayButton();
+
+        public PlayButton()
+        {
+            Icon = new SymbolIcon(Symbol.Play);
+        }
+    }
+
+    public class AddFeedButton : AppBarButton
+    {
+        public static AddFeedButton Instance = new AddFeedButton();
+
+        public AddFeedButton()
+        {
+            Icon = new SymbolIcon(Symbol.Add);
+        }
+    }
+
+    public class RemoveFeedButton : AppBarButton
+    {
+        public static RemoveFeedButton Instance = new RemoveFeedButton();
+
+        public RemoveFeedButton()
+        {
+            Icon = new SymbolIcon(Symbol.Remove);
+        }
+    }
 }

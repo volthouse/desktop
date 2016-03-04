@@ -6,35 +6,18 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">    
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">       
     <Page.BottomAppBar>
-
-        <CommandBar>
-            <CommandBar.SecondaryCommands>
-                <AppBarButton x:Name="removeFeedsButton" Label="Remove Feeds"/>
-                <AppBarButton x:Name="clearAllButton" Label="Clear All"/>
-            </CommandBar.SecondaryCommands>
-
-
-            <AppBarButton x:Name="addFeedButton" Icon="Add" Label="Edit Feeds"/>
-            <AppBarButton x:Name="playButton" Icon="Play" Label="Play"/>
-            <AppBarButton x:Name="playerControlButton" Label="Player" Icon="Audio">
-                <AppBarButton.Flyout>
-                    <local:CustomFlyout Placement="Full">
-                        <local:PlayerControl x:Name="playerControl"/>
-                    </local:CustomFlyout>
-                </AppBarButton.Flyout>
-
-            </AppBarButton>
+        <CommandBar x:Name="commandBar">            
         </CommandBar>
     </Page.BottomAppBar>
-    <Pivot Title="Pivot">
-        <PivotItem Header="Feeds">
+    <Pivot x:Name="pivot" Title="Pivot">
+        <PivotItem x:Name="feedsPivotItem" Header="Feeds">
             <Grid>
                 <ListView x:Name="feedListView" IsItemClickEnabled="True"/>
             </Grid>            
         </PivotItem>
-        <PivotItem Header="Items">
+        <PivotItem x:Name="feedDetailsPivotItem" Header="Items">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="67*"/>
@@ -44,7 +27,7 @@
                 <ListView x:Name="feedItemsListView" IsItemClickEnabled="True" Grid.Row="1" Margin="0,0.333,0,-2.167"/>
             </Grid>
         </PivotItem>
-        <PivotItem Header="Player">
+        <PivotItem x:Name="playerPivotItem" Header="Player">
             <Grid>
 
             </Grid>
