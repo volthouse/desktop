@@ -392,6 +392,12 @@ namespace ACastBackgroundAudioTask
                 BackgroundMediaPlayer.Current.Play();
             }
 
+            ResumePlaybackMessage resumePlaybackMessage;
+            if(MessageService.TryParseMessage(e.Data, out resumePlaybackMessage))
+            {
+                StartPlayback();
+            }
+
         }
 
         #endregion

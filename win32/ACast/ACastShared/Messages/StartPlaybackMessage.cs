@@ -23,7 +23,11 @@ namespace ACastShared.Messages
     {
     }
 
-   
+    public class ResumePlaybackMessage
+    {
+    }
+
+
     [DataContract]
     public class StartTrackMessage
     {

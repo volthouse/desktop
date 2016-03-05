@@ -36,8 +36,11 @@ namespace ACast
             posSlider.PointerExited += PosSlider_PointerExited;
 
             smtc = SystemMediaTransportControls.GetForCurrentView();
+            var x = BackgroundMediaPlayer.Current.CurrentState;
 
-            
+            textBox.Text = x.ToString();
+
+
            // smtc.PlaybackStatus
         }
 
@@ -114,6 +117,14 @@ namespace ACast
             {
                 Player.Instance.Resume();
                 
+            }
+            else if (Player.Instance.State == MediaPlayerState.Closed)
+            {
+                //Player.Instance.Play;
+                BackgroundMediaPlayer.Current.Play();
+
+                
+
             }
         }
 

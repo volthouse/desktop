@@ -173,18 +173,26 @@ namespace ACast
 
         public void Pause()
         {
-            if (IsMyBackgroundTaskRunning)
-            {
+           // if (IsMyBackgroundTaskRunning)
+           // {
                 BackgroundMediaPlayer.Current.Pause();
-            }
+           // }
         }
 
         public void Resume()
         {
-            if (IsMyBackgroundTaskRunning)
-            {
+           // if (IsMyBackgroundTaskRunning)
+           // {
                 BackgroundMediaPlayer.Current.Play();
-            }
+           // }
+        }
+
+        public void ResumeEx()
+        {
+           // if (IsMyBackgroundTaskRunning)
+           // {
+                MessageService.SendMessageToBackground(new ResumePlaybackMessage());
+           // }
         }
 
         public double RelativePosition {

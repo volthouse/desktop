@@ -6,7 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d" Height="118" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Width="249.167" VerticalAlignment="Bottom">
-    <Grid VerticalAlignment="Top" Height="125">
+    <Grid VerticalAlignment="Top" Height="175" Margin="0,-50,0.167,-6.667">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="Auto"/>
@@ -17,11 +17,13 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="80*"/>
             <RowDefinition Height="80*"/>
+            <RowDefinition Height="80*"/>
         </Grid.RowDefinitions>
-        <AppBarButton x:Name="rewardButton" HorizontalAlignment="Stretch" Icon="Back" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True" Width="80"/>
-        <AppBarButton x:Name="playButton" HorizontalAlignment="Stretch" Icon="Play" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True"  Grid.Column="1" Width="80"/>
-        <AppBarButton x:Name="forwardButton" HorizontalAlignment="Stretch" Icon="Forward" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True"  Grid.Column="2" Width="80"/>
-        <Slider x:Name="posSlider" VerticalAlignment="Top" Grid.Row="1" Grid.ColumnSpan="5" Maximum="100" SmallChange="1" StepFrequency="-1"/>
+        <AppBarButton x:Name="rewardButton" HorizontalAlignment="Stretch" Icon="Back" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True" Width="80" Grid.Row="1"/>
+        <AppBarButton x:Name="playButton" HorizontalAlignment="Stretch" Icon="Play" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True"  Grid.Column="1" Width="80" Grid.Row="1"/>
+        <AppBarButton x:Name="forwardButton" HorizontalAlignment="Stretch" Icon="Forward" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True"  Grid.Column="2" Width="80" Grid.Row="1"/>
+        <Slider x:Name="posSlider" VerticalAlignment="Top" Grid.Row="2" Grid.ColumnSpan="5" Maximum="100" SmallChange="1" StepFrequency="-1"/>
+        <TextBox x:Name="textBox" Margin="10,10,10,14.333" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Stretch" Grid.ColumnSpan="3"/>
     </Grid>
 
 
