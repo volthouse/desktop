@@ -38,6 +38,7 @@ namespace ACast
             urlCombo.Items.Add("http://deimhart.net/index.php?/feeds/index.rss2");
             urlCombo.Items.Add("http://chaosradio.ccc.de/chaosradio-latest.rss");
             urlCombo.Items.Add("http://www.br-online.de/podcast/radiowissen/cast.xml");
+            urlCombo.Items.Add("http://raumzeit-podcast.de/feed/mp3/");
         }
 
         private void ContentDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)

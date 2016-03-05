@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading;
 using Windows.Media.Playback;
 using Windows.Storage;
+using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
@@ -27,29 +28,16 @@ namespace ACast
             context = SynchronizationContext.Current;
 
             this.NavigationCacheMode = NavigationCacheMode.Required;
-
             
             feedListView.ItemClick += feedListView_ItemClick;
+            pivot.PivotItemLoaded += pivot_PivotItemLoaded;
 
             FeedManager.Instance.FeedListLoadedAsync += feedListLoadedAsync;            
             FeedManager.Instance.LoadFeedListAsync();
 
-            Player.Instance.StateChanged += playerStateChanged;
-
-            pivot.PivotItemLoaded += pivot_PivotItemLoaded;
-
-            //playButton.Visibility = Visibility.Collapsed;
-            //playButton.Click += playButton_Click;
-
-            //addFeedButton.Click += addFeedButton_Click;
-            //removeFeedsButton.Click += removeFeedsButton_Click;
-            //clearAllButton.Click += cleanallButton_Click;
-
-            //playerControlButton.Click += playerControlButton_Click;
-
             AddFeedButton.Instance.Click += addFeedButton_Click;
-
-            refreshButton.Click += RefreshButton_Click;
+            RefreshFeedButton.Instance.Click += RefreshButton_Click;
+            RemoveFeedButton.Instance.Click += cleanallButton_Click;
 
         }
 
@@ -65,11 +53,12 @@ namespace ACast
             else if (args.Item.Equals(feedDetailsPivotItem))
             {
                 this.commandBar.PrimaryCommands.Clear();
-                this.commandBar.PrimaryCommands.Add(PlayButton.Instance);
+                this.commandBar.PrimaryCommands.Add(RefreshFeedButton.Instance);
                 this.commandBar.Visibility = Visibility.Visible;
             }
-            else
+            else if (args.Item.Equals(playerPivotItem))
             {
+                playerControl.Activate();
                 this.commandBar.PrimaryCommands.Clear();
                 this.commandBar.Visibility = Visibility.Collapsed;
             }
@@ -92,19 +81,8 @@ namespace ACast
                 await file.DeleteAsync();
             }
 
-            //textBox.Text = "All files deleted";
-        }
-
-        void playerControlButton_Click(object sender, RoutedEventArgs e)
-        {
-            //CustomFlyout flyout = playerControlButton.Flyout as CustomFlyout;
-            //if (flyout != null)
-            //{
-            //    if (flyout.IsOpen)
-            //    {
-            //        flyout.Hide();
-            //    }
-            //}
+            MessageDialog dlg = new MessageDialog("All deleted");
+            await dlg.ShowAsync();
         }
 
         async void addFeedButton_Click(object sender, RoutedEventArgs e)
@@ -120,37 +98,6 @@ namespace ACast
         {
             FeedManager.Instance.FeedListDeletedAsync += FeedListDeletedAsync;
             FeedManager.Instance.DeleteFeedList();
-        }
-
-        void playerStateChanged(object sender, Windows.Media.Playback.MediaPlayerState e)
-        {
-            //context.Post(new SendOrPostCallback((o) =>
-            //{
-            //    Debug.WriteLine("player state changed:" + e.ToString());
-            //    switch (e)
-            //    {
-            //        case MediaPlayerState.Buffering:
-            //            break;
-            //        case MediaPlayerState.Closed:
-            //            playButton.Visibility = Visibility.Collapsed;
-            //            break;
-            //        case MediaPlayerState.Opening:
-            //            playButton.Visibility = Visibility.Visible;
-            //            break;
-            //        case MediaPlayerState.Paused:
-            //            playButton.Icon = new SymbolIcon(Symbol.Play);
-            //            break;
-            //        case MediaPlayerState.Playing:
-            //            playButton.Visibility = Visibility.Visible;
-            //            playButton.Icon = new SymbolIcon(Symbol.Pause);
-            //            break;
-            //        case MediaPlayerState.Stopped:
-            //            playButton.Visibility = Visibility.Collapsed;
-            //            break;
-            //        default:
-            //            break;
-            //    }
-            //}), null);
         }
 
         private void feedListLoadedAsync()
@@ -183,13 +130,14 @@ namespace ACast
 
             context.Post(new SendOrPostCallback((o) =>
             {
-                Debug.WriteLine(FeedManager.Instance.CurrentFeedItems.Count.ToString());
+                //Debug.WriteLine(FeedManager.Instance.CurrentFeedItems.Count.ToString());
                 feedItems = new GeneratorIncrementalLoadingClass<FeedDetailsListViewItem>(
                     (uint)FeedManager.Instance.CurrentFeedItems.Count,
                     getItem
                 );
                 feedItemsListView.ItemsSource = feedItems;
-                //feedItems.LoadMoreItemsAsync(1);
+                feedItems.LoadMoreItemsAsync(1);
+                pivot.SelectedItem = feedDetailsPivotItem;
             }), null);
         }
 
@@ -308,6 +256,16 @@ namespace ACast
         public RemoveFeedButton()
         {
             Icon = new SymbolIcon(Symbol.Remove);
+        }
+    }
+
+    public class RefreshFeedButton : AppBarButton
+    {
+        public static RefreshFeedButton Instance = new RefreshFeedButton();
+
+        public RefreshFeedButton()
+        {
+            Icon = new SymbolIcon(Symbol.Refresh);
         }
     }
 }

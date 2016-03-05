@@ -19,17 +19,12 @@
         </PivotItem>
         <PivotItem x:Name="feedDetailsPivotItem" Header="Items">
             <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="67*"/>
-                    <RowDefinition Height="379*"/>
-                </Grid.RowDefinitions>
-                <AppBarButton x:Name="refreshButton" HorizontalAlignment="Right" Icon="Refresh" Label="" VerticalAlignment="Stretch" Width="80" Margin="0,0,0,66.667"/>
                 <ListView x:Name="feedItemsListView" IsItemClickEnabled="True" Grid.Row="1" Margin="0,0.333,0,-2.167"/>
             </Grid>
         </PivotItem>
         <PivotItem x:Name="playerPivotItem" Header="Player">
             <Grid>
-                <local:PlayerControl Margin="0,0,5,0" HorizontalAlignment="Center"/>
+                <local:PlayerControl x:Name="playerControl" Margin="0,0,5,0" HorizontalAlignment="Center"/>
             </Grid>
         </PivotItem>
     </Pivot>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using Windows.Media;
 using Windows.Media.Playback;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -13,6 +14,7 @@ namespace ACast
     {
         private SynchronizationContext context;
         private DispatcherTimer timer;
+        private SystemMediaTransportControls smtc;
 
         public PlayerControl()
         {
@@ -32,6 +34,16 @@ namespace ACast
 
             posSlider.PointerEntered += PosSlider_PointerEntered;
             posSlider.PointerExited += PosSlider_PointerExited;
+
+            smtc = SystemMediaTransportControls.GetForCurrentView();
+
+            
+           // smtc.PlaybackStatus
+        }
+
+        public void Activate()
+        {
+            Instance_StateChanged(null, Player.Instance.State);
         }
 
         private void PosSlider_PointerEntered(object sender, Windows.UI.Xaml.Input.PointerRoutedEventArgs e)

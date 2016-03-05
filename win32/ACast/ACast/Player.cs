@@ -149,7 +149,7 @@ namespace ACast
             //Debug.WriteLine("Clicked item from App: " + song.MediaUri.ToString());
 
             // Start the background task if it wasn't running
-            if (!IsMyBackgroundTaskRunning || MediaPlayerState.Closed == CurrentPlayer.CurrentState)
+            if (!IsMyBackgroundTaskRunning /*|| MediaPlayerState.Closed == CurrentPlayer.CurrentState*/)
             {
                 // First update the persisted start track
                 ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.TrackId, path);
@@ -191,7 +191,12 @@ namespace ACast
             get {
                 double relativePos = BackgroundMediaPlayer.Current.Position.TotalMilliseconds /
                     BackgroundMediaPlayer.Current.NaturalDuration.TotalMilliseconds;
-                return relativePos * 100;
+                if (relativePos > 0)
+                {
+                    return relativePos * 100;
+                }
+
+                return 0;
             }
 
             set
