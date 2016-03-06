@@ -1,4 +1,6 @@
-﻿using System;
+﻿using ACastShared;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using Windows.Media.Playback;
@@ -23,9 +25,12 @@ namespace ACast
 
         public MainPage()
         {
-            this.InitializeComponent();
+           Player.Instance = new Player();
+
+           this.InitializeComponent();
 
             context = SynchronizationContext.Current;
+
 
             this.NavigationCacheMode = NavigationCacheMode.Required;
             
@@ -62,15 +67,38 @@ namespace ACast
                 this.commandBar.PrimaryCommands.Clear();
                 this.commandBar.Visibility = Visibility.Collapsed;
             }
-        }        
+            else if (args.Item.Equals(debugPivotItem))
+            {
+                this.commandBar.PrimaryCommands.Clear();
+                this.commandBar.PrimaryCommands.Add(RefreshFeedButton.Instance);
+
+                debugList.Items.Clear();
+                foreach (var item in DebugService.Instance.DebugMessages)
+                {
+                    debugList.Items.Add(item);
+                }
+            }
+        }
 
         async private void RefreshButton_Click(object sender, RoutedEventArgs e)
         {
-            await FeedManager.Instance.UpdateFeedAsync(FeedManager.Instance.CurrentFeed.Uri.ToString(), FeedManager.Instance.CurrentFeed);
+            if (pivot.SelectedItem == debugPivotItem)
+            {
+                debugList.Items.Clear();
+                foreach (var item in DebugService.Instance.DebugMessages)
+                {
+                    debugList.Items.Add(item);
+                }
+            }
+            else
+            {
 
-            FeedManager.Instance.FeedActivatedAsync += feedActivatedAsync;
+                await FeedManager.Instance.UpdateFeedAsync(FeedManager.Instance.CurrentFeed.Uri.ToString(), FeedManager.Instance.CurrentFeed);
 
-            FeedManager.Instance.ActiveFeedAsync(currentFeedIdx);
+                FeedManager.Instance.FeedActivatedAsync += feedActivatedAsync;
+
+                FeedManager.Instance.ActiveFeedAsync(currentFeedIdx);
+            }
         }
 
         async void cleanallButton_Click(object sender, RoutedEventArgs e)
@@ -119,7 +147,7 @@ namespace ACast
 
         private FeedDetailsListViewItem getItem(int count)
         {
-            //Debug.WriteLine(count);
+            //DebugService.Add(count);
             var feedItem = FeedManager.Instance.CurrentFeedItems[count];
             return new FeedDetailsListViewItem(feedItem);
         }
@@ -130,7 +158,7 @@ namespace ACast
 
             context.Post(new SendOrPostCallback((o) =>
             {
-                //Debug.WriteLine(FeedManager.Instance.CurrentFeedItems.Count.ToString());
+                //DebugService.Add(FeedManager.Instance.CurrentFeedItems.Count.ToString());
                 feedItems = new GeneratorIncrementalLoadingClass<FeedDetailsListViewItem>(
                     (uint)FeedManager.Instance.CurrentFeedItems.Count,
                     getItem

@@ -58,6 +58,7 @@ namespace ACastShared
             {
                 ApplicationData.Current.LocalSettings.Values[key] = value;
             }
+
         }
 
     }

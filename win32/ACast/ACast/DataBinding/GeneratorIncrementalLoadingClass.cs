@@ -26,7 +26,6 @@ namespace ACast
         {
             _generator = generator;
             _maxCount = maxCount;
-            Debug.WriteLine(maxCount);
         }
 
         protected async override Task<IList<object>> LoadMoreItemsOverrideAsync(System.Threading.CancellationToken c, uint count)

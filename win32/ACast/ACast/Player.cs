@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using Windows.Foundation;
+using Windows.Foundation.Collections;
 using Windows.Media.Playback;
 using Windows.Storage;
 using Windows.UI.Core;
@@ -16,8 +17,8 @@ namespace ACast
     {
         private bool _isMyBackgroundTaskRunning = false;
         private AutoResetEvent backgroundAudioTaskStarted;
-        
-        public static Player Instance = new Player();
+
+        public static Player Instance;// = new Player();
 
         public event EventHandler<MediaPlayerState> StateChanged;
 
@@ -34,6 +35,13 @@ namespace ACast
         {
             backgroundAudioTaskStarted = new AutoResetEvent(false);
             Dispatcher = Window.Current.Dispatcher;
+
+            DebugService.Add("Player: created");
+            ApplicationSettingsHelper.SaveSettingsValue("Player", "Started");
+
+            AddMediaPlayerEventHandlers();
+
+            MessageService.SendMessageToBackground(new IsBackgroundServiceAlive());
         }
 
 
@@ -70,6 +78,8 @@ namespace ACast
         /// </summary>
         public void ForegroundAppResuming()
         {
+            DebugService.Add("Player: ForegroundAppResuming");
+
             ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.AppState, AppState.Active.ToString());
 
             // Verify the task is running
@@ -114,10 +124,28 @@ namespace ACast
         {
             get
             {
+                MessageService.SendMessageToBackground(new IsBackgroundServiceAlive());
+
+                if (_isMyBackgroundTaskRunning)
+                {
+                    DebugService.Add("Player: IsMyBackgroundTaskRunning: running");
+                } else
+                {
+                    DebugService.Add("Player: IsMyBackgroundTaskRunning: not running");
+                }
+                
                 if (_isMyBackgroundTaskRunning)
                     return true;
 
                 string value = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.BackgroundTaskState) as string;
+                if(value == null) {
+                    DebugService.Add("Player: IsMyBackgroundTaskRunning: value = null");
+                } else
+                {
+                    DebugService.Add("Player: IsMyBackgroundTaskRunning: value = " + value.ToString());
+                }
+
+                
                 if (value == null)
                 {
                     return false;
@@ -141,12 +169,8 @@ namespace ACast
 
         public void Play(FeedItem feedItem)
         {
-            Debug.WriteLine("Play button pressed from App");
+            DebugService.Add("Player: Play button pressed");
             string path = ApplicationData.Current.LocalFolder.Path + @"\" + feedItem.FileName;
-            //StartBackgroundAudioTask(path);
-
-            //var song = e.ClickedItem as SongModel;
-            //Debug.WriteLine("Clicked item from App: " + song.MediaUri.ToString());
 
             // Start the background task if it wasn't running
             if (!IsMyBackgroundTaskRunning /*|| MediaPlayerState.Closed == CurrentPlayer.CurrentState*/)
@@ -223,6 +247,7 @@ namespace ACast
 
         private void StartBackgroundAudioTask(string filePath)
         {
+            DebugService.Add("Player: StartBackgroundAudioTask");
             AddMediaPlayerEventHandlers();
 
             var startResult = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
@@ -231,14 +256,12 @@ namespace ACast
                 //Send message to initiate playback
                 if (result == true)
                 {
-                    //var list = new List<SongModel>();
-                    //list.Add(new SongModel() { Title = "Test", MediaUri = new Uri(filePath) });
-                    //MessageService.SendMessageToBackground(new UpdatePlaylistMessage(list));
-                    //MessageService.SendMessageToBackground(new StartPlaybackMessage());
+                    DebugService.Add("Player: StartBackgroundAudioTask: Ok");
                     MessageService.SendMessageToBackground(new StartTrackMessage(new Uri(filePath)));
                 }
                 else
                 {
+                    DebugService.Add("Player: StartBackgroundAudioTask: Failed");
                     throw new Exception("Background Audio Task didn't start in expected time");
                 }
             });
@@ -249,17 +272,34 @@ namespace ACast
         {
             if (status == AsyncStatus.Completed)
             {
-                Debug.WriteLine("Background Audio Task initialized");
+                DebugService.Add("Player: Background Audio Task initialized");
             }
             else if (status == AsyncStatus.Error)
             {
-                Debug.WriteLine("Background Audio Task could not initialized due to an error ::" + action.ErrorCode.ToString());
+                DebugService.Add("Player: Background Audio Task could not initialized due to an error ::" + action.ErrorCode.ToString());
             }
         }
 
         async void BackgroundMediaPlayer_MessageReceivedFromBackground(object sender, MediaPlayerDataReceivedEventArgs e)
         {
-            TrackChangedMessage trackChangedMessage;
+
+            ValueSet valueSet = e.Data;
+            string s = "";
+
+            foreach (var item in valueSet.Values)
+            {
+                s += item.ToString();
+            }
+
+            DebugService.Add("Player: MessageReceivedFromBackground:\r\n" + s);
+
+            BackgroundServiceIsAlive backgroundServiceIsAlive;
+            if (MessageService.TryParseMessage(e.Data, out backgroundServiceIsAlive))
+            {
+                _isMyBackgroundTaskRunning = true;
+            }
+
+                TrackChangedMessage trackChangedMessage;
             if (MessageService.TryParseMessage(e.Data, out trackChangedMessage))
             {
                 // When foreground app is active change track based on background message
@@ -300,7 +340,7 @@ namespace ACast
             {
                 // StartBackgroundAudioTask is waiting for this signal to know when the task is up and running
                 // and ready to receive messages
-                Debug.WriteLine("BackgroundAudioTask started");
+                DebugService.Add("Player: BackgroundAudioTask started");
                 backgroundAudioTaskStarted.Set();
                 return;
             }
@@ -314,7 +354,6 @@ namespace ACast
             try
             {
                 BackgroundMediaPlayer.Current.CurrentStateChanged -= this.MediaPlayer_CurrentStateChanged;
-                CurrentPlayer.MediaEnded -= CurrentPlayer_MediaEnded;
                 BackgroundMediaPlayer.MessageReceivedFromBackground -= BackgroundMediaPlayer_MessageReceivedFromBackground;
             }
             catch (Exception ex)
@@ -336,7 +375,6 @@ namespace ACast
         private void AddMediaPlayerEventHandlers()
         {
             CurrentPlayer.CurrentStateChanged += this.MediaPlayer_CurrentStateChanged;
-            CurrentPlayer.MediaEnded += CurrentPlayer_MediaEnded;
 
             try
             {
@@ -344,6 +382,7 @@ namespace ACast
             }
             catch (Exception ex)
             {
+                DebugService.Add("Player: AddMediaPlayerEventHandlers:" + ex.Message);
                 if (ex.HResult == RPC_S_SERVER_UNAVAILABLE)
                 {
                     // Internally MessageReceivedFromBackground calls Current which can throw RPC_S_SERVER_UNAVAILABLE
@@ -354,15 +393,6 @@ namespace ACast
                     throw;
                 }
             }
-        }
-
-        private void CurrentPlayer_MediaEnded(MediaPlayer sender, object args)
-        {
-            //if (StateChanged != null)
-            //{
-            //    StateChanged(this, MediaPlayerState.Stopped);
-            //}
-            //BackgroundMediaPlayer.Current.p
         }
 
         /// <summary>

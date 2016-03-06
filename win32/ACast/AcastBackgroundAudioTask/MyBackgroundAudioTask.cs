@@ -360,7 +360,7 @@ namespace ACastBackgroundAudioTask
         void BackgroundMediaPlayer_MessageReceivedFromForeground(object sender, MediaPlayerDataReceivedEventArgs e)
         {
             AppSuspendedMessage appSuspendedMessage;
-            if(MessageService.TryParseMessage(e.Data, out appSuspendedMessage))
+            if (MessageService.TryParseMessage(e.Data, out appSuspendedMessage))
             {
                 Debug.WriteLine("App suspending"); // App is suspended, you can save your task state at this point
                 foregroundAppState = AppState.Suspended;
@@ -370,7 +370,7 @@ namespace ACastBackgroundAudioTask
             }
 
             AppResumedMessage appResumedMessage;
-            if(MessageService.TryParseMessage(e.Data, out appResumedMessage))
+            if (MessageService.TryParseMessage(e.Data, out appResumedMessage))
             {
                 Debug.WriteLine("App resuming"); // App is resumed, now subscribe to message channel
                 foregroundAppState = AppState.Active;
@@ -378,7 +378,7 @@ namespace ACastBackgroundAudioTask
             }
 
             StartTrackMessage startTrackMessage;
-            if(MessageService.TryParseMessage(e.Data, out startTrackMessage))
+            if (MessageService.TryParseMessage(e.Data, out startTrackMessage))
             {
                 currentPlaybackItem = new MediaPlaybackItem();
                 currentPlaybackItem.Source = startTrackMessage.TrackId;
@@ -393,13 +393,17 @@ namespace ACastBackgroundAudioTask
             }
 
             ResumePlaybackMessage resumePlaybackMessage;
-            if(MessageService.TryParseMessage(e.Data, out resumePlaybackMessage))
+            if (MessageService.TryParseMessage(e.Data, out resumePlaybackMessage))
             {
                 StartPlayback();
             }
 
+            IsBackgroundServiceAlive isBackgroundServiceAlive;
+            if (MessageService.TryParseMessage(e.Data, out isBackgroundServiceAlive))
+            {
+                MessageService.SendMessageToForeground(new BackgroundServiceIsAlive());
+            }
         }
-
         #endregion
     }
 

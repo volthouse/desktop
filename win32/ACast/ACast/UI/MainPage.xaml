@@ -27,6 +27,11 @@
                 <local:PlayerControl x:Name="playerControl" Margin="0,0,5,0" HorizontalAlignment="Center"/>
             </Grid>
         </PivotItem>
+        <PivotItem x:Name="debugPivotItem" Header="Debug">
+            <Grid>
+                <ListBox x:Name="debugList"/>
+            </Grid>
+        </PivotItem>
     </Pivot>
 
 

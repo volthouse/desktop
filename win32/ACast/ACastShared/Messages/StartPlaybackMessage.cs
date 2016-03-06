@@ -19,10 +19,21 @@ using System.Threading.Tasks;
 namespace ACastShared.Messages
 {
     [DataContract]
+    public class IsBackgroundServiceAlive
+    {
+    }
+
+    [DataContract]
+    public class BackgroundServiceIsAlive
+    {
+    }
+
+    [DataContract]
     public class StartPlaybackMessage
     {
     }
 
+    [DataContract]
     public class ResumePlaybackMessage
     {
     }

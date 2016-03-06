@@ -93,6 +93,7 @@
     <Compile Include="Messages\AppResumedMessage.cs" />
     <Compile Include="Messages\AppSuspendedMessage.cs" />
     <Compile Include="Messages\BackgroundAudioTaskStartedMessage.cs" />
+    <Compile Include="DebugService.cs" />
     <Compile Include="Messages\MessageService.cs" />
     <Compile Include="Messages\SkipNextMessage.cs" />
     <Compile Include="Messages\SkipPreviousMessage.cs" />
