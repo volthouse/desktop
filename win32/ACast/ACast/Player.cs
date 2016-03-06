@@ -35,7 +35,7 @@ namespace ACast
             Dispatcher = Window.Current.Dispatcher;
 
             DebugService.Add("Player: created");
-            ApplicationSettingsHelper.SaveSettingsValue("Player", "Started");
+            //ApplicationSettingsHelper.SaveSettingsValue("Player", "Started");
 
             AddMediaPlayerEventHandlers();
 
@@ -51,7 +51,7 @@ namespace ACast
         {
             DebugService.Add("Player: ForegroundAppResuming");
 
-            ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.AppState, AppState.Active.ToString());
+            //ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.AppState, AppState.Active.ToString());
 
             // Verify the task is running
             if (_isMyBackgroundTaskRunning)
@@ -83,7 +83,7 @@ namespace ACast
             }
 
             // Persist that the foreground app is suspended
-            ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.AppState, AppState.Suspended.ToString());
+            //ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.AppState, AppState.Suspended.ToString());
 
             deferral.Complete();
         }

@@ -52,7 +52,7 @@ namespace ACastBackgroundAudioTask
         private const string AlbumArtKey = "albumart";
         private SystemMediaTransportControls smtc;
         private BackgroundTaskDeferral deferral; // Used to keep task alive
-        private AppState foregroundAppState = AppState.Unknown;
+        //private AppState foregroundAppState = AppState.Unknown;
         private ManualResetEvent backgroundTaskStarted = new ManualResetEvent(false);
         private bool playbackStartedPreviously = false;
         private MediaPlaybackItem currentPlaybackItem;
@@ -103,11 +103,11 @@ namespace ACastBackgroundAudioTask
             smtc.IsPreviousEnabled = true;
 
             // Read persisted state of foreground app
-            var value = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.AppState);
-            if (value == null)
-                foregroundAppState = AppState.Unknown;
-            else
-                foregroundAppState = EnumHelper.Parse<AppState>(value.ToString());
+            //var value = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.AppState);
+            //if (value == null)
+            //    foregroundAppState = AppState.Unknown;
+            //else
+            //    foregroundAppState = EnumHelper.Parse<AppState>(value.ToString());
 
             // Add handlers for MediaPlayer
             BackgroundMediaPlayer.Current.CurrentStateChanged += Current_CurrentStateChanged;
@@ -116,10 +116,10 @@ namespace ACastBackgroundAudioTask
             BackgroundMediaPlayer.MessageReceivedFromForeground += BackgroundMediaPlayer_MessageReceivedFromForeground;
 
             // Send information to foreground that background task has been started if app is active
-            if (foregroundAppState != AppState.Suspended)
+            //if (foregroundAppState != AppState.Suspended)
                 MessageService.SendMessageToForeground(new BackgroundAudioTaskStartedMessage());
 
-            ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.BackgroundTaskState, BackgroundTaskState.Running.ToString());
+            //ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.BackgroundTaskState, BackgroundTaskState.Running.ToString());
 
             deferral = taskInstance.GetDeferral(); // This must be retrieved prior to subscribing to events below which use it
 
@@ -156,10 +156,10 @@ namespace ACastBackgroundAudioTask
                 backgroundTaskStarted.Reset();
 
                 // save state
-                ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.TrackId, GetCurrentTrackId() == null ? null : GetCurrentTrackId().ToString());
-                ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.Position, BackgroundMediaPlayer.Current.Position.ToString());
-                ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.BackgroundTaskState, BackgroundTaskState.Canceled.ToString());
-                ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.AppState, Enum.GetName(typeof(AppState), foregroundAppState));
+                //ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.TrackId, GetCurrentTrackId() == null ? null : GetCurrentTrackId().ToString());
+                //ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.Position, BackgroundMediaPlayer.Current.Position.ToString());
+                //ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.BackgroundTaskState, BackgroundTaskState.Canceled.ToString());
+                //ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.AppState, Enum.GetName(typeof(AppState), foregroundAppState));
 
                 // unsubscribe event handlers
                 BackgroundMediaPlayer.MessageReceivedFromForeground -= BackgroundMediaPlayer_MessageReceivedFromForeground;
@@ -276,30 +276,31 @@ namespace ACastBackgroundAudioTask
         {
             try
             {
-                // If playback was already started once we can just resume playing.
-                if (!playbackStartedPreviously)
-                {
-                    playbackStartedPreviously = true;
+                BackgroundMediaPlayer.Current.Play();
+                //// If playback was already started once we can just resume playing.
+                //if (!playbackStartedPreviously)
+                //{
+                //    playbackStartedPreviously = true;
 
-                    // If the task was cancelled we would have saved the current track and its position. We will try playback from there.
-                    var currentTrackId = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.TrackId);
-                    var currentTrackPosition = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.Position);
-                    if (currentTrackId != null)
-                    {
+                //    // If the task was cancelled we would have saved the current track and its position. We will try playback from there.
+                //    var currentTrackId = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.TrackId);
+                //    var currentTrackPosition = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.Position);
+                //    if (currentTrackId != null)
+                //    {
 
                        
-                    }
-                    else
-                    {
-                        // Begin playing
-                        BackgroundMediaPlayer.Current.Play();
-                    }
-                }
-                else
-                {
-                    // Begin playing                   
-                    BackgroundMediaPlayer.Current.Play();
-                }
+                //    }
+                //    else
+                //    {
+                //        // Begin playing
+                //        BackgroundMediaPlayer.Current.Play();
+                //    }
+                //}
+                //else
+                //{
+                //    // Begin playing                   
+                //    BackgroundMediaPlayer.Current.Play();
+                //}
             }
             catch (Exception ex)
             {
@@ -327,10 +328,10 @@ namespace ACastBackgroundAudioTask
                 currentTrackId = item.Source; //.CustomProperties[TrackIdKey] as Uri;
 
             // Notify foreground of change or persist for later
-            if (foregroundAppState == AppState.Active)
+            //if (foregroundAppState == AppState.Active)
                 MessageService.SendMessageToForeground(new TrackChangedMessage(currentTrackId));
-            else
-                ApplicationSettingsHelper.SaveSettingsValue(TrackIdKey, currentTrackId == null ? null : currentTrackId.ToString());
+            //else
+            //    ApplicationSettingsHelper.SaveSettingsValue(TrackIdKey, currentTrackId == null ? null : currentTrackId.ToString());
         }
 
         #endregion
@@ -363,9 +364,9 @@ namespace ACastBackgroundAudioTask
             if (MessageService.TryParseMessage(e.Data, out appSuspendedMessage))
             {
                 Debug.WriteLine("App suspending"); // App is suspended, you can save your task state at this point
-                foregroundAppState = AppState.Suspended;
+                //foregroundAppState = AppState.Suspended;
                 var currentTrackId = GetCurrentTrackId();
-                ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.TrackId, currentTrackId == null ? null : currentTrackId.ToString());
+                //ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.TrackId, currentTrackId == null ? null : currentTrackId.ToString());
                 return;
             }
 
@@ -373,7 +374,7 @@ namespace ACastBackgroundAudioTask
             if (MessageService.TryParseMessage(e.Data, out appResumedMessage))
             {
                 Debug.WriteLine("App resuming"); // App is resumed, now subscribe to message channel
-                foregroundAppState = AppState.Active;
+                //foregroundAppState = AppState.Active;
                 return;
             }
 
