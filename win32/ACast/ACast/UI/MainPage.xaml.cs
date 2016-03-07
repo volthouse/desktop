@@ -224,7 +224,7 @@ namespace ACast
             switch (Player.Instance.State)
             {
                 case MediaPlayerState.Paused:
-                    Player.Instance.Resume();
+                    Player.Instance.Play();
                     break;
                 case MediaPlayerState.Playing:
                     Player.Instance.Pause();

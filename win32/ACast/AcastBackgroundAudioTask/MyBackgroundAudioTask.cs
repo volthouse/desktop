@@ -54,7 +54,6 @@ namespace ACastBackgroundAudioTask
         private BackgroundTaskDeferral deferral; // Used to keep task alive
         //private AppState foregroundAppState = AppState.Unknown;
         private ManualResetEvent backgroundTaskStarted = new ManualResetEvent(false);
-        private bool playbackStartedPreviously = false;
         private MediaPlaybackItem currentPlaybackItem;
         #endregion
 
@@ -156,8 +155,8 @@ namespace ACastBackgroundAudioTask
                 backgroundTaskStarted.Reset();
 
                 // save state
-                //ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.TrackId, GetCurrentTrackId() == null ? null : GetCurrentTrackId().ToString());
-                //ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.Position, BackgroundMediaPlayer.Current.Position.ToString());
+                ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.TrackId, GetCurrentTrackId() == null ? null : GetCurrentTrackId().ToString());
+                ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.Position, BackgroundMediaPlayer.Current.Position.ToString());
                 //ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.BackgroundTaskState, BackgroundTaskState.Canceled.ToString());
                 //ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.AppState, Enum.GetName(typeof(AppState), foregroundAppState));
 
@@ -239,8 +238,8 @@ namespace ACastBackgroundAudioTask
                     bool result = backgroundTaskStarted.WaitOne(5000);
                     if (!result)
                         throw new Exception("Background Task didnt initialize in time");
-                    
-                    StartPlayback();
+
+                    BackgroundMediaPlayer.Current.Play();
                     break;
                 case SystemMediaTransportControlsButton.Pause:
                     Debug.WriteLine("UVC pause button pressed");
@@ -269,54 +268,15 @@ namespace ACastBackgroundAudioTask
         #endregion
 
         #region Playlist management functions and handlers
-        /// <summary>
-        /// Start playlist and change UVC state
-        /// </summary>
-        private void StartPlayback()
-        {
-            try
-            {
-                BackgroundMediaPlayer.Current.Play();
-                //// If playback was already started once we can just resume playing.
-                //if (!playbackStartedPreviously)
-                //{
-                //    playbackStartedPreviously = true;
-
-                //    // If the task was cancelled we would have saved the current track and its position. We will try playback from there.
-                //    var currentTrackId = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.TrackId);
-                //    var currentTrackPosition = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.Position);
-                //    if (currentTrackId != null)
-                //    {
-
-                       
-                //    }
-                //    else
-                //    {
-                //        // Begin playing
-                //        BackgroundMediaPlayer.Current.Play();
-                //    }
-                //}
-                //else
-                //{
-                //    // Begin playing                   
-                //    BackgroundMediaPlayer.Current.Play();
-                //}
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.ToString());
-            }
-        }
 
         /// <summary>
         /// Raised when playlist changes to a new track
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
-        void PlaybackList_CurrentItemChanged(MediaPlaybackList sender, CurrentMediaPlaybackItemChangedEventArgs args)
+        void playbackCurrentItemChanged(MediaPlaybackItem item)
         {
             // Get the new item
-            var item = args.NewItem;
             Debug.WriteLine("PlaybackList_CurrentItemChanged: " + (item == null ? "null" : GetTrackId(item).ToString()));
 
             // Update the system view
@@ -384,10 +344,7 @@ namespace ACastBackgroundAudioTask
                 currentPlaybackItem = new MediaPlaybackItem();
                 currentPlaybackItem.Source = startTrackMessage.TrackId;
 
-                var x = new CurrentMediaPlaybackItemChangedEventArgs();
-                x.NewItem = currentPlaybackItem;
-
-                PlaybackList_CurrentItemChanged(null, x);
+                playbackCurrentItemChanged(currentPlaybackItem);
 
                 BackgroundMediaPlayer.Current.SetUriSource(startTrackMessage.TrackId);
                 BackgroundMediaPlayer.Current.Play();
@@ -396,7 +353,24 @@ namespace ACastBackgroundAudioTask
             ResumePlaybackMessage resumePlaybackMessage;
             if (MessageService.TryParseMessage(e.Data, out resumePlaybackMessage))
             {
-                StartPlayback();
+                var currentTrackId = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.TrackId);
+                var currentTrackPosition = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.Position);
+
+                currentPlaybackItem = new MediaPlaybackItem();
+                currentPlaybackItem.Source = new Uri(currentTrackId.ToString());
+
+                playbackCurrentItemChanged(currentPlaybackItem);
+
+                BackgroundMediaPlayer.Current.SetUriSource(startTrackMessage.TrackId);
+                TimeSpan timeSpan;
+
+                if (TimeSpan.TryParse(currentTrackPosition.ToString(), out timeSpan))
+                {
+                    BackgroundMediaPlayer.Current.Position = timeSpan;
+                }
+                
+                BackgroundMediaPlayer.Current.Play();
+
             }
 
             IsBackgroundServiceAlive isBackgroundServiceAlive;

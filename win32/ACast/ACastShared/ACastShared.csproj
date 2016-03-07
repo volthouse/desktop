@@ -89,18 +89,13 @@
     <Compile Include="EnumHelper.cs" />
     <Compile Include="JsonHelper.cs" />
     <Compile Include="MediaPlaybackItem.cs" />
-    <Compile Include="MediaPlaybackList.cs" />
     <Compile Include="Messages\AppResumedMessage.cs" />
     <Compile Include="Messages\AppSuspendedMessage.cs" />
     <Compile Include="Messages\BackgroundAudioTaskStartedMessage.cs" />
     <Compile Include="DebugService.cs" />
     <Compile Include="Messages\MessageService.cs" />
-    <Compile Include="Messages\SkipNextMessage.cs" />
-    <Compile Include="Messages\SkipPreviousMessage.cs" />
     <Compile Include="Messages\StartPlaybackMessage.cs" />
     <Compile Include="Messages\TrackChangedMessage.cs" />
-    <Compile Include="Messages\UpdatePlaylistMessage.cs" />
-    <Compile Include="Models\SongModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '12.0' ">

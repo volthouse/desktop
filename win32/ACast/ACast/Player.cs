@@ -100,17 +100,9 @@ namespace ACast
                 CurrentPlayer.Play();
             }
 
-        }
+        }        
 
-        public void Pause()
-        {
-           // if (IsMyBackgroundTaskRunning)
-           // {
-                BackgroundMediaPlayer.Current.Pause();
-           // }
-        }
-
-        public void Resume()
+        public void Play()
         {
            // if (IsMyBackgroundTaskRunning)
            // {
@@ -118,7 +110,15 @@ namespace ACast
            // }
         }
 
-        public void ResumeEx()
+        public void Pause()
+        {
+            // if (IsMyBackgroundTaskRunning)
+            // {
+            BackgroundMediaPlayer.Current.Pause();
+            // }
+        }
+
+        public void Resume()
         {
            // if (IsMyBackgroundTaskRunning)
            // {

@@ -24,16 +24,16 @@ namespace ACast
 
             timer = new DispatcherTimer();
             timer.Interval = TimeSpan.FromMilliseconds(1000);
-            timer.Tick += Timer_Tick;
+            timer.Tick += timer_Tick;
 
-            Player.Instance.StateChanged += Instance_StateChanged;
+            Player.Instance.StateChanged += player_StateChanged;
 
             playButton.Click += playButton_Click;
-            forwardButton.Click += ForwardButton_Click;
-            rewardButton.Click += RewardButton_Click;
+            forwardButton.Click += forwardButton_Click;
+            rewardButton.Click += rewardButton_Click;
 
-            posSlider.PointerEntered += PosSlider_PointerEntered;
-            posSlider.PointerExited += PosSlider_PointerExited;
+            posSlider.PointerEntered += posSlider_PointerEntered;
+            posSlider.PointerExited += posSlider_PointerExited;
 
         }
 
@@ -43,38 +43,38 @@ namespace ACast
 
             textBox.Text = x.ToString();
 
-            Instance_StateChanged(null, Player.Instance.State);
+            player_StateChanged(null, Player.Instance.State);
         }
 
-        private void PosSlider_PointerEntered(object sender, Windows.UI.Xaml.Input.PointerRoutedEventArgs e)
+        private void posSlider_PointerEntered(object sender, Windows.UI.Xaml.Input.PointerRoutedEventArgs e)
         {
             timer.Stop();
         }
 
-        private void PosSlider_PointerExited(object sender, Windows.UI.Xaml.Input.PointerRoutedEventArgs e)
+        private void posSlider_PointerExited(object sender, Windows.UI.Xaml.Input.PointerRoutedEventArgs e)
         {
             Player.Instance.RelativePosition = posSlider.Value;
             timer.Start();
         }
 
-        private void RewardButton_Click(object sender, RoutedEventArgs e)
+        private void rewardButton_Click(object sender, RoutedEventArgs e)
         {
-            posSlider.Value -= 10;
+            posSlider.Value -= 5;
             Player.Instance.RelativePosition = posSlider.Value;
         }
 
-        private void ForwardButton_Click(object sender, RoutedEventArgs e)
+        private void forwardButton_Click(object sender, RoutedEventArgs e)
         {
-            posSlider.Value += 10;
+            posSlider.Value += 5;
             Player.Instance.RelativePosition = posSlider.Value;
         }
 
-        private void Timer_Tick(object sender, object e)
+        private void timer_Tick(object sender, object e)
         {
             posSlider.Value = Player.Instance.RelativePosition;
         }
 
-        private void Instance_StateChanged(object sender, MediaPlayerState e)
+        private void player_StateChanged(object sender, MediaPlayerState e)
         {
             context.Post(new SendOrPostCallback((o) =>
             {
@@ -106,24 +106,28 @@ namespace ACast
 
         void playButton_Click(object sender, RoutedEventArgs e)
         {
-            if (Player.Instance.State == MediaPlayerState.Playing)
-            {
-                Player.Instance.Pause();                
-            }
-            else if (Player.Instance.State == MediaPlayerState.Paused)
-            {
-                Player.Instance.Resume();
-                
-            }
-            else if (Player.Instance.State == MediaPlayerState.Closed)
-            {
-                //Player.Instance.Play;
-                BackgroundMediaPlayer.Current.Play();
 
-                
-
+            switch (Player.Instance.State)
+            {
+                case MediaPlayerState.Buffering:
+                    break;
+                case MediaPlayerState.Closed:
+                    Player.Instance.Resume();
+                    break;
+                case MediaPlayerState.Opening:
+                    break;
+                case MediaPlayerState.Paused:
+                    Player.Instance.Play();
+                    break;
+                case MediaPlayerState.Playing:
+                    Player.Instance.Pause();
+                    break;
+                case MediaPlayerState.Stopped:
+                    break;
+                default:
+                    break;
             }
+
         }
-
     }
 }
