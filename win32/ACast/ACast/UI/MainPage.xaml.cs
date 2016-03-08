@@ -194,7 +194,7 @@ namespace ACast
             feedItemsListView.ItemsSource = feedItems;
             
             await feedItems.LoadMoreItemsAsync(
-                (uint)Math.Min(10, FeedManager.Instance.CurrentFeedItems.Count)
+                (uint)Math.Min(5, FeedManager.Instance.CurrentFeedItems.Count)
             );
             
             pivot.SelectedItem = feedDetailsPivotItem;

@@ -35,23 +35,25 @@ namespace ACast
             posSlider.PointerEntered += posSlider_PointerEntered;
             posSlider.PointerExited += posSlider_PointerExited;
 
-            sleepTimerComboBox.SelectionChanged += sleepTimerComboBox_SelectionChanged;
-        }        
+            foreach (MenuFlyoutItem item in sleepTimerFlyout.Items)
+            {
+                item.Click += sleepItemClick;
+            }
+
+        }
 
         public void Activate()
         {
-            var x = BackgroundMediaPlayer.Current.CurrentState;
-
-            textBox.Text = x.ToString();
-
             player_StateChanged(null, Player.Instance.State);
         }
 
-        void sleepTimerComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void sleepItemClick(object sender, RoutedEventArgs e)
         {
-            int[] t = { 5 * 60000, 15 * 60000, 30 * 60000, 60 * 60000 };
-
-            Player.Instance.SetSleepTimer(t[sleepTimerComboBox.SelectedIndex]);
+            SleepTimerItem item = sender as SleepTimerItem;
+            if(item != null)
+            {
+                Player.Instance.SetSleepTimer(item.DurationMs);
+            }
         }
 
         private void posSlider_PointerEntered(object sender, Windows.UI.Xaml.Input.PointerRoutedEventArgs e)
@@ -67,13 +69,13 @@ namespace ACast
 
         private void rewardButton_Click(object sender, RoutedEventArgs e)
         {
-            posSlider.Value -= 5;
+            posSlider.Value -= 2;
             Player.Instance.RelativePosition = posSlider.Value;
         }
 
         private void forwardButton_Click(object sender, RoutedEventArgs e)
         {
-            posSlider.Value += 5;
+            posSlider.Value += 2;
             Player.Instance.RelativePosition = posSlider.Value;
         }
 
@@ -108,6 +110,7 @@ namespace ACast
                 }
 
                 posSlider.Value = Player.Instance.RelativePosition;
+                textBox.Text = e.ToString();
 
             }), null);
         }
@@ -137,5 +140,13 @@ namespace ACast
             }
 
         }
+    }
+
+    public class SleepTimerItem : MenuFlyoutItem
+    {
+        public SleepTimerItem() { 
+        }
+
+        public int DurationMs { get; set; }
     }
 }

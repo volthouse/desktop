@@ -14,24 +14,27 @@
             <ColumnDefinition Width="80"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="250"/>
+            <RowDefinition Height="100"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <ComboBox x:Name="sleepTimerComboBox" Grid.RowSpan="2" Grid.ColumnSpan="2" VerticalAlignment="Top" IsDropDownOpen="True">
-            <ComboBoxItem Content="5min"/>
-            <ComboBoxItem Content="15min"/>
-            <ComboBoxItem Content="30min"/>
-            <ComboBoxItem Content="60min"/>
-            <ComboBoxItem/>
-        </ComboBox>
         <TextBox x:Name="textBox" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Grid.ColumnSpan="3" Grid.Row="1"/>
         <AppBarButton x:Name="rewardButton" HorizontalAlignment="Stretch" Icon="Back" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True" Height="54" Grid.Row="2" Margin="13,0.125,13,0"/>
         <AppBarButton x:Name="playButton" HorizontalAlignment="Stretch" Icon="Play" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True"  Grid.Column="1" Grid.Row="2" Height="54" Margin="13,0.125,13,0"/>
         <AppBarButton x:Name="forwardButton" HorizontalAlignment="Stretch" Icon="Forward" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True"  Grid.Column="2" Grid.Row="2" Height="54" Margin="13,0.125,13,0"/>
-        <AppBarButton x:Name="timeoutButton" HorizontalAlignment="Stretch" Icon="Forward" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True"  Grid.Column="2" Grid.Row="2" Height="54" Margin="13,0.125,13,0"/>
-        
+        <AppBarButton x:Name="sleepTimerButton" HorizontalAlignment="Stretch" Icon="Clock" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True"  Grid.Column="3" Grid.Row="2" Height="54" Margin="13,0.125,13,0">
+            <AppBarButton.Flyout>
+                <MenuFlyout x:Name="sleepTimerFlyout">
+                    <local:SleepTimerItem Text="3 s" DurationMs="3000"/>
+                    <local:SleepTimerItem Text="5 min" DurationMs="300000"/>
+                    <local:SleepTimerItem Text="15 min" DurationMs="900000"/>
+                    <local:SleepTimerItem Text="30 min" DurationMs="18000000"/>
+                    <local:SleepTimerItem Text="60 min" DurationMs="36000000"/>
+                </MenuFlyout>
+            </AppBarButton.Flyout>
+        </AppBarButton>
+
         <Slider x:Name="posSlider" Grid.Row="3" Grid.ColumnSpan="3" Maximum="100" SmallChange="1" StepFrequency="-1" Margin="0,6.125,0,-6.298"/>
     </Grid>
 

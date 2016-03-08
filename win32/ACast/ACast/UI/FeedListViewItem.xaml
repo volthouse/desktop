@@ -5,13 +5,13 @@
     xmlns:local="using:ACast"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d" Height="80" Width="260">
-    <Grid Height="80">
+    mc:Ignorable="d" Height="150" Width="Auto" Margin="0,0,0,5">
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="60"/>
+            <RowDefinition Height="100"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <Image x:Name="image" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-        <TextBlock x:Name="textBox" TextWrapping="Wrap" Grid.Row="1" Text=""/>
+        <Image x:Name="image" HorizontalAlignment="Left" VerticalAlignment="Top" Stretch="UniformToFill"/>
+        <TextBlock x:Name="textBox" Grid.Row="1" Text="Text" FontSize="16" TextWrapping="Wrap"/>
     </Grid>
 </UserControl>
