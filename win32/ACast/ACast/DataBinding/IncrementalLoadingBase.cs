@@ -127,7 +127,7 @@ namespace ACast
             }
 
             _busy = true;
-
+            
             return AsyncInfo.Run((c) => LoadMoreItemsAsync(c, count));
         }
 

@@ -165,7 +165,7 @@ namespace ACast
                     Feed feed = new Feed() { Id = newId, Uri = uri.ToString(), FileName = newId + ".dat", ItemsFilename = newId + "_items.dat" };
 
                     SyndicationFeed sfeed = new SyndicationFeed();
-                    await UpdateFeedAsync(uri.ToString(), feed);
+                    await UpdateFeedAsync(uri.ToString(), feed, false);
 
                     if (feed.ImageUri != null)
                     {
@@ -291,7 +291,7 @@ namespace ACast
         }
 
 
-        public async Task UpdateFeedAsync(string stringUri, Feed feed)
+        public async Task UpdateFeedAsync(string stringUri, Feed feed, bool serializeFeedList)
         {
             SyndicationClient client = new SyndicationClient();
 
@@ -335,6 +335,11 @@ namespace ACast
             SerializeFeedItems(feed.ItemsFilename, feedItems);
 
             feed.LastUpdateDate = DateTimeOffset.Now;
+
+            if (serializeFeedList)
+            {
+                SerializeFeedList();
+            }            
 
             if (FeedUpdateCompletedAsync != null)
             {
@@ -522,7 +527,7 @@ namespace ACast
         ErrorMessage
     };
 
-    public class Feed
+    public class Feed 
     {
         public Feed()
         {
@@ -541,6 +546,15 @@ namespace ACast
         public string FileName;
         public string ImageUri;
         public string ItemsFilename;
+
+        [XmlElement("lastUpdatedTime")]
+        public string lastUpdatedTimeForXml // format: 2011-11-11T15:05:46.4733406+01:00
+        {
+            get { return LastUpdateDate.ToString("yyyy-MM-ddTHH:mm:ss.fffffffzzz"); }
+            set { LastUpdateDate = DateTimeOffset.Parse(value); }
+        }
+        [XmlIgnore] 
+
         public DateTimeOffset LastUpdateDate;
 
         public override string ToString()

@@ -41,9 +41,39 @@ namespace ACast
             FeedManager.Instance.LoadFeedListAsync();
 
             AddFeedButton.Instance.Click += addFeedButton_Click;
-            RefreshFeedButton.Instance.Click += RefreshButton_Click;
-            RemoveFeedButton.Instance.Click += cleanallButton_Click;
+            RefreshFeedButton.Instance.Click += refreshButton_Click;
+            RemoveFeedButton.Instance.Click += cleanAllButton_Click;
 
+        }
+
+        /// <summary>
+        /// Invoked when this page is about to be displayed in a Frame.
+        /// </summary>
+        /// <param name="e">Event data that describes how this page was reached.
+        /// This parameter is typically used to configure the page.</param>
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            // TODO: Prepare page for display here.
+
+            // TODO: If your application contains multiple pages, ensure that you are
+            // handling the hardware Back button by registering for the
+            // Windows.Phone.UI.Input.HardwareButtons.BackPressed event.
+            // If you are using the NavigationHelper provided by some templates,
+            // this event is handled for you.
+
+            Application.Current.Suspending += app_Suspending;
+            Application.Current.Resuming += app_Resuming;
+
+        }
+
+        private void app_Resuming(object sender, object e)
+        {
+            Player.Instance.ForegroundAppResuming();
+        }
+
+        private void app_Suspending(object sender, Windows.ApplicationModel.SuspendingEventArgs e)
+        {
+            Player.Instance.ForegroundAppSuspending(e.SuspendingOperation.GetDeferral());
         }
 
         void pivot_PivotItemLoaded(Pivot sender, PivotItemEventArgs args)
@@ -80,7 +110,7 @@ namespace ACast
             }
         }
 
-        async private void RefreshButton_Click(object sender, RoutedEventArgs e)
+        async private void refreshButton_Click(object sender, RoutedEventArgs e)
         {
             if (pivot.SelectedItem == debugPivotItem)
             {
@@ -93,7 +123,9 @@ namespace ACast
             else
             {
 
-                await FeedManager.Instance.UpdateFeedAsync(FeedManager.Instance.CurrentFeed.Uri.ToString(), FeedManager.Instance.CurrentFeed);
+                await FeedManager.Instance.UpdateFeedAsync(
+                    FeedManager.Instance.CurrentFeed.Uri.ToString(), FeedManager.Instance.CurrentFeed, true
+                );
 
                 FeedManager.Instance.FeedActivatedAsync += feedActivatedAsync;
 
@@ -101,7 +133,7 @@ namespace ACast
             }
         }
 
-        async void cleanallButton_Click(object sender, RoutedEventArgs e)
+        async void cleanAllButton_Click(object sender, RoutedEventArgs e)
         {
             StorageFolder folder = ApplicationData.Current.LocalFolder;
             foreach (var file in await folder.GetFilesAsync())
@@ -124,7 +156,7 @@ namespace ACast
 
         void removeFeedsButton_Click(object sender, RoutedEventArgs e)
         {
-            FeedManager.Instance.FeedListDeletedAsync += FeedListDeletedAsync;
+            FeedManager.Instance.FeedListDeletedAsync += feedListDeletedAsync;
             FeedManager.Instance.DeleteFeedList();
         }
 
@@ -143,6 +175,29 @@ namespace ACast
                     feedListView.Items.Add(customItem);
                 }
             }), null);
+        }       
+
+        void feedActivatedAsync()
+        {
+            FeedManager.Instance.FeedActivatedAsync -= feedActivatedAsync;
+
+            context.Post(updateFeedItemsListView, null);
+        }
+
+        private async void updateFeedItemsListView(object state)
+        {
+            feedItems = new GeneratorIncrementalLoadingClass<FeedDetailsListViewItem>(
+                (uint)FeedManager.Instance.CurrentFeedItems.Count,
+                getItem
+            );
+
+            feedItemsListView.ItemsSource = feedItems;
+            
+            await feedItems.LoadMoreItemsAsync(
+                (uint)Math.Min(10, FeedManager.Instance.CurrentFeedItems.Count)
+            );
+            
+            pivot.SelectedItem = feedDetailsPivotItem;
         }
 
         private FeedDetailsListViewItem getItem(int count)
@@ -150,60 +205,11 @@ namespace ACast
             //DebugService.Add(count);
             var feedItem = FeedManager.Instance.CurrentFeedItems[count];
             return new FeedDetailsListViewItem(feedItem);
-        }
+        }                
 
-        void feedActivatedAsync()
+        private void feedListDeletedAsync()
         {
-            FeedManager.Instance.FeedActivatedAsync -= feedActivatedAsync;
-
-            context.Post(new SendOrPostCallback((o) =>
-            {
-                //DebugService.Add(FeedManager.Instance.CurrentFeedItems.Count.ToString());
-                feedItems = new GeneratorIncrementalLoadingClass<FeedDetailsListViewItem>(
-                    (uint)FeedManager.Instance.CurrentFeedItems.Count,
-                    getItem
-                );
-                feedItemsListView.ItemsSource = feedItems;
-                feedItems.LoadMoreItemsAsync(1);
-                pivot.SelectedItem = feedDetailsPivotItem;
-            }), null);
-        }
-
-        /// <summary>
-        /// Invoked when this page is about to be displayed in a Frame.
-        /// </summary>
-        /// <param name="e">Event data that describes how this page was reached.
-        /// This parameter is typically used to configure the page.</param>
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            // TODO: Prepare page for display here.
-
-            // TODO: If your application contains multiple pages, ensure that you are
-            // handling the hardware Back button by registering for the
-            // Windows.Phone.UI.Input.HardwareButtons.BackPressed event.
-            // If you are using the NavigationHelper provided by some templates,
-            // this event is handled for you.
-
-            Application.Current.Suspending += Current_Suspending;
-            Application.Current.Resuming += Current_Resuming;
-
-            Player.Instance.Dispatcher = this.Dispatcher;
-        }
-
-        private void Current_Resuming(object sender, object e)
-        {
-            Player.Instance.Dispatcher = this.Dispatcher;
-            Player.Instance.ForegroundAppResuming();
-        }
-
-        private void Current_Suspending(object sender, Windows.ApplicationModel.SuspendingEventArgs e)
-        {
-            Player.Instance.ForegroundAppSuspending(e.SuspendingOperation.GetDeferral());
-        }
-
-        private void FeedListDeletedAsync()
-        {
-            FeedManager.Instance.FeedListDeletedAsync -= FeedListDeletedAsync;
+            FeedManager.Instance.FeedListDeletedAsync -= feedListDeletedAsync;
             FeedManager.Instance.FeedListLoadedAsync += feedListLoadedAsync;
             FeedManager.Instance.LoadFeedListAsync();
         }
@@ -217,23 +223,7 @@ namespace ACast
 
             currentFeedIdx = feedIdx;
 
-        }
-
-        private void playButton_Click(object sender, RoutedEventArgs e)
-        {
-            switch (Player.Instance.State)
-            {
-                case MediaPlayerState.Paused:
-                    Player.Instance.Play();
-                    break;
-                case MediaPlayerState.Playing:
-                    Player.Instance.Pause();
-                    break;
-                default:
-                    break;
-            }
-        }
-
+        }       
     }
 
     public class CustomFlyout : Flyout
@@ -253,19 +243,9 @@ namespace ACast
 
         void OnOpened(object sender, object e)
         {
-            IsOpen = true;    
+            IsOpen = true;
         }
-    }
-
-    public class PlayButton : AppBarButton
-    {
-        public static PlayButton Instance = new PlayButton();
-
-        public PlayButton()
-        {
-            Icon = new SymbolIcon(Symbol.Play);
-        }
-    }
+    }    
 
     public class AddFeedButton : AppBarButton
     {

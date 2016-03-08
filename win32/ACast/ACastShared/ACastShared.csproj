@@ -94,6 +94,7 @@
     <Compile Include="Messages\BackgroundAudioTaskStartedMessage.cs" />
     <Compile Include="DebugService.cs" />
     <Compile Include="Messages\MessageService.cs" />
+    <Compile Include="Messages\SetSleepTimerMessage.cs" />
     <Compile Include="Messages\StartPlaybackMessage.cs" />
     <Compile Include="Messages\TrackChangedMessage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -15,15 +15,13 @@ namespace ACast
 {
     public sealed class Player
     {
-        private bool _isMyBackgroundTaskRunning = false;
+        private bool isBackgroundTaskRunning = false;
 
-        public static Player Instance;// = new Player();
+        public static Player Instance;
 
         public event EventHandler<MediaPlayerState> StateChanged;
 
         const int RPC_S_SERVER_UNAVAILABLE = -2147023174; // 0x800706BA
-
-        public CoreDispatcher Dispatcher;
 
         public MediaPlayerState State
         {
@@ -32,12 +30,10 @@ namespace ACast
 
         public Player()
         {
-            Dispatcher = Window.Current.Dispatcher;
-
             DebugService.Add("Player: created");
             //ApplicationSettingsHelper.SaveSettingsValue("Player", "Started");
 
-            AddMediaPlayerEventHandlers();
+            addMediaPlayerEventHandlers();
 
             MessageService.SendMessageToBackground(new IsBackgroundServiceAlive());
         }
@@ -54,10 +50,10 @@ namespace ACast
             //ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.AppState, AppState.Active.ToString());
 
             // Verify the task is running
-            if (_isMyBackgroundTaskRunning)
+            if (isBackgroundTaskRunning)
             {
                 // If yes, it's safe to reconnect to media play handlers
-                AddMediaPlayerEventHandlers();
+                addMediaPlayerEventHandlers();
 
                 // Send message to background task that app is resumed so it can start sending notifications again
                 MessageService.SendMessageToBackground(new AppResumedMessage());
@@ -73,10 +69,10 @@ namespace ACast
         {
             // Only if the background task is already running would we do these, otherwise
             // it would trigger starting up the background task when trying to suspend.
-            if (_isMyBackgroundTaskRunning)
+            if (isBackgroundTaskRunning)
             {
                 // Stop handling player events immediately
-                RemoveMediaPlayerEventHandlers();
+                removeMediaPlayerEventHandlers();
 
                 // Tell the background task the foreground is suspended
                 MessageService.SendMessageToBackground(new AppSuspendedMessage());
@@ -95,35 +91,35 @@ namespace ACast
 
             MessageService.SendMessageToBackground(new StartTrackMessage(new Uri(path)));
 
-            if (MediaPlayerState.Paused == CurrentPlayer.CurrentState)
+            if (MediaPlayerState.Paused == currentPlayer.CurrentState)
             {
-                CurrentPlayer.Play();
+                currentPlayer.Play();
             }
 
         }        
 
         public void Play()
         {
-           // if (IsMyBackgroundTaskRunning)
-           // {
+            if (isBackgroundTaskRunning)
+            {
                 BackgroundMediaPlayer.Current.Play();
-           // }
+            }
         }
 
         public void Pause()
         {
-            // if (IsMyBackgroundTaskRunning)
-            // {
-            BackgroundMediaPlayer.Current.Pause();
-            // }
+            if (isBackgroundTaskRunning)
+            {
+                BackgroundMediaPlayer.Current.Pause();
+            }
         }
 
         public void Resume()
         {
-           // if (IsMyBackgroundTaskRunning)
-           // {
+            if (isBackgroundTaskRunning)
+            {
                 MessageService.SendMessageToBackground(new ResumePlaybackMessage());
-           // }
+            }
         }
 
         public double RelativePosition {
@@ -151,8 +147,15 @@ namespace ACast
             }
         }
 
+        public void SetSleepTimer(int durationMs)
+        {
+            if (isBackgroundTaskRunning)
+            {
+                MessageService.SendMessageToBackground(new SetSleepTimerMessage(durationMs));
+            }
+        }
 
-        void BackgroundMediaPlayer_MessageReceivedFromBackground(object sender, MediaPlayerDataReceivedEventArgs e)
+        void backgroundMediaPlayer_MessageReceivedFromBackground(object sender, MediaPlayerDataReceivedEventArgs e)
         {
 
             ValueSet valueSet = e.Data;
@@ -168,7 +171,7 @@ namespace ACast
             BackgroundServiceIsAlive backgroundServiceIsAlive;
             if (MessageService.TryParseMessage(e.Data, out backgroundServiceIsAlive))
             {
-                _isMyBackgroundTaskRunning = true;
+                isBackgroundTaskRunning = true;
                 DebugService.Add("Player: BackgroundAudioTask is alive");
             }
 
@@ -179,20 +182,34 @@ namespace ACast
                 // StartBackgroundAudioTask is waiting for this signal to know when the task is up and running
                 // and ready to receive messages
                 DebugService.Add("Player: BackgroundAudioTask started");
-                _isMyBackgroundTaskRunning = true;
+                isBackgroundTaskRunning = true;
                 return;
+            }
+        }
+
+        /// <summary>
+        /// MediaPlayer state changed event handlers. 
+        /// Note that we can subscribe to events even if Media Player is playing media in background
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        void mediaPlayer_CurrentStateChanged(MediaPlayer sender, object args)
+        {
+            if (StateChanged != null)
+            {
+                StateChanged(this, sender.CurrentState);
             }
         }
 
         /// <summary>
         /// Unsubscribes to MediaPlayer events. Should run only on suspend
         /// </summary>
-        private void RemoveMediaPlayerEventHandlers()
+        private void removeMediaPlayerEventHandlers()
         {
             try
             {
-                BackgroundMediaPlayer.Current.CurrentStateChanged -= this.MediaPlayer_CurrentStateChanged;
-                BackgroundMediaPlayer.MessageReceivedFromBackground -= BackgroundMediaPlayer_MessageReceivedFromBackground;
+                BackgroundMediaPlayer.Current.CurrentStateChanged -= this.mediaPlayer_CurrentStateChanged;
+                BackgroundMediaPlayer.MessageReceivedFromBackground -= backgroundMediaPlayer_MessageReceivedFromBackground;
             }
             catch (Exception ex)
             {
@@ -210,13 +227,13 @@ namespace ACast
         /// <summary>
         /// Subscribes to MediaPlayer events
         /// </summary>
-        private void AddMediaPlayerEventHandlers()
+        private void addMediaPlayerEventHandlers()
         {
-            CurrentPlayer.CurrentStateChanged += this.MediaPlayer_CurrentStateChanged;
+            currentPlayer.CurrentStateChanged += this.mediaPlayer_CurrentStateChanged;
 
             try
             {
-                BackgroundMediaPlayer.MessageReceivedFromBackground += BackgroundMediaPlayer_MessageReceivedFromBackground;
+                BackgroundMediaPlayer.MessageReceivedFromBackground += backgroundMediaPlayer_MessageReceivedFromBackground;
             }
             catch (Exception ex)
             {
@@ -231,22 +248,7 @@ namespace ACast
                     throw;
                 }
             }
-        }
-
-        /// <summary>
-        /// MediaPlayer state changed event handlers. 
-        /// Note that we can subscribe to events even if Media Player is playing media in background
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="args"></param>
-        /*async*/
-        void MediaPlayer_CurrentStateChanged(MediaPlayer sender, object args)
-        {
-            if (StateChanged != null)
-            {
-                StateChanged(this, sender.CurrentState);
-            }
-        }
+        }        
 
         /// <summary>
         /// You should never cache the MediaPlayer and always call Current. It is possible
@@ -254,7 +256,7 @@ namespace ACast
         /// an RPC_S_SERVER_UNAVAILABLE error is thrown. We need to reset the foreground state
         /// and restart the background task.
         /// </summary>
-        private MediaPlayer CurrentPlayer
+        private MediaPlayer currentPlayer
         {
             get
             {
@@ -292,5 +294,6 @@ namespace ACast
                 return mp;
             }
         }
+
     }
 }

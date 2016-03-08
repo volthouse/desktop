@@ -35,7 +35,8 @@ namespace ACast
             posSlider.PointerEntered += posSlider_PointerEntered;
             posSlider.PointerExited += posSlider_PointerExited;
 
-        }
+            sleepTimerComboBox.SelectionChanged += sleepTimerComboBox_SelectionChanged;
+        }        
 
         public void Activate()
         {
@@ -44,6 +45,13 @@ namespace ACast
             textBox.Text = x.ToString();
 
             player_StateChanged(null, Player.Instance.State);
+        }
+
+        void sleepTimerComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            int[] t = { 5 * 60000, 15 * 60000, 30 * 60000, 60 * 60000 };
+
+            Player.Instance.SetSleepTimer(t[sleepTimerComboBox.SelectedIndex]);
         }
 
         private void posSlider_PointerEntered(object sender, Windows.UI.Xaml.Input.PointerRoutedEventArgs e)

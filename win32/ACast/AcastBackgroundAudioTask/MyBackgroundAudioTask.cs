@@ -55,6 +55,7 @@ namespace ACastBackgroundAudioTask
         //private AppState foregroundAppState = AppState.Unknown;
         private ManualResetEvent backgroundTaskStarted = new ManualResetEvent(false);
         private MediaPlaybackItem currentPlaybackItem;
+        private Timer sleepTimer;
         #endregion
 
         #region Helper methods
@@ -378,8 +379,19 @@ namespace ACastBackgroundAudioTask
             {
                 MessageService.SendMessageToForeground(new BackgroundServiceIsAlive());
             }
+
+            SetSleepTimerMessage setSleepTimerMessage;
+            if (MessageService.TryParseMessage(e.Data, out setSleepTimerMessage))
+            {
+                sleepTimer = new Timer(sleepTimerCallback, null, setSleepTimerMessage.DurationMs, 0);
+            }
         }
         #endregion
+
+        void sleepTimerCallback(object state)
+        {
+            BackgroundMediaPlayer.Current.Pause();
+        }
     }
 
     
