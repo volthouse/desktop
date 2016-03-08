@@ -241,8 +241,20 @@ namespace ACast
 
         public async void StartDownloadMedia(FeedItem feedItem) {
             feedItem.FileName = Guid.NewGuid() + ".mp3";
+
+            //StorageFolder externalDevices = Windows.Storage.KnownFolders.RemovableDevices;
+
+            //IReadOnlyList<StorageFolder> subfolders = await externalDevices.GetFoldersAsync();
+            //IReadOnlyList<StorageFolder> subfolders1 = await subfolders[0].GetFoldersAsync();
+
+            //feedItem.Path = subfolders1[4].Path;
+
+            //await DownloadFile(feedItem.Uri, subfolders1[4] /*ApplicationData.Current.LocalFolder*/, feedItem.FileName);
+
+            feedItem.Path = ApplicationData.Current.LocalFolder.Path;
+
             await DownloadFile(feedItem.Uri, ApplicationData.Current.LocalFolder, feedItem.FileName);
-                        
+
             var feeds = from item in feedList where item.Id.CompareTo(feedItem.ParentId) == 0 select item;
 
             if (feeds.Count() > 0)
@@ -256,6 +268,7 @@ namespace ACast
                     FeedItem item = feedItems.First();
                     item.DownloadState = FeedDownloadState.DownloadCompleted;
                     item.FileName = feedItem.FileName;
+                    item.Path = feedItem.Path;
                 }
 
                 SerializeFeedItems(feed.ItemsFilename, items);
@@ -605,6 +618,7 @@ namespace ACast
 
         public string ParentId;
         public string Id;
+        public string Path;
         public string FileName;
         public string Uri;
         public FeedDownloadState DownloadState;

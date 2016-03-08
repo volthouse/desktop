@@ -27,6 +27,14 @@
             <Task Type="audio" />
           </BackgroundTasks>
         </Extension>
+        <Extension Category="windows.fileTypeAssociation">
+          <FileTypeAssociation Name=".mp3">
+            <DisplayName>mp3</DisplayName>
+            <SupportedFileTypes>
+              <FileType ContentType="audio/mp3">.mp3</FileType>
+            </SupportedFileTypes>
+          </FileTypeAssociation>
+        </Extension>
       </Extensions>
     </Application>
   </Applications>
@@ -34,5 +42,6 @@
     <Capability Name="internetClientServer" />
     <Capability Name="picturesLibrary" />
     <Capability Name="musicLibrary" />
+    <Capability Name="removableStorage" />
   </Capabilities>
 </Package>
