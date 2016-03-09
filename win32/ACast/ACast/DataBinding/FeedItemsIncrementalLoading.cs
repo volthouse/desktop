@@ -29,7 +29,7 @@ namespace ACast.DataBinding
             Task task = Task.Delay(1);
             await task;
 
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < count && last < FeedManager.Instance.CurrentFeedItems.Count; i++)
             {
                 Add(new FeedDetailsListViewItem(FeedManager.Instance.CurrentFeedItems[last]));
                 last++;

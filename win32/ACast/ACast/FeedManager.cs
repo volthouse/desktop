@@ -331,18 +331,29 @@ namespace ACast
                         feed.ImageUri = elementExtensions.First().AttributeExtensions[0].Value;
                     }
                 }
-            }           
+            }
 
-                        
+
             var newSyndicationItems = from item in syndicationFeed.Items where item.PublishedDate > feed.LastUpdateDate select item;
+
+            //feed.LastUpdateDate = new DateTimeOffset(2016, 3, 8, 0, 0, 0, TimeSpan.Zero);
+            //var newSyndicationItems = from item in syndicationFeed.Items where item.PublishedDate < feed.LastUpdateDate select item;
 
 
             List<FeedItem> feedItems = await LoadFeedItemsAsync(feed.ItemsFilename);
 
-            foreach (var syndicationItem in newSyndicationItems)
+            if(feedItems.Count > 0)
             {
-                feedItems.Add(new FeedItem(feed.Id, syndicationItem));
-                
+                foreach (var syndicationItem in newSyndicationItems)
+                {
+                    feedItems.Insert(0, new FeedItem(feed.Id, syndicationItem));
+                }
+            } else
+            {
+                foreach (var syndicationItem in newSyndicationItems)
+                {
+                    feedItems.Add(new FeedItem(feed.Id, syndicationItem));
+                }
             }
 
             SerializeFeedItems(feed.ItemsFilename, feedItems);

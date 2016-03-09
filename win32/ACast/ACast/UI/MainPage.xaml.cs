@@ -4,12 +4,14 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 using Windows.Media.Playback;
 using Windows.Storage;
 using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
+using System.Linq;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=391641
 
@@ -44,6 +46,25 @@ namespace ACast
             RefreshFeedButton.Instance.Click += refreshButton_Click;
             RemoveFeedButton.Instance.Click += cleanAllButton_Click;
 
+            SearchFeedButton.Instance.Match += Instance_Match;
+
+        }
+
+        private async void Instance_Match(object sender, FeedItem e)
+        {
+
+            int n = FeedManager.Instance.CurrentFeedItems.IndexOf(e);
+
+
+            for (int i = 0; i < 5000; i++)
+            {
+                await feedItemsListView.LoadMoreItemsAsync();
+                if (feedItemsListView.Items.Count >= n)
+                {
+                    feedItemsListView.ScrollIntoView(feedItemsListView.Items[n]);
+                    break;
+                }
+            }
         }
 
         /// <summary>
@@ -89,6 +110,7 @@ namespace ACast
             {
                 this.commandBar.PrimaryCommands.Clear();
                 this.commandBar.PrimaryCommands.Add(RefreshFeedButton.Instance);
+                this.commandBar.PrimaryCommands.Add(SearchFeedButton.Instance);
                 this.commandBar.Visibility = Visibility.Visible;
             }
             else if (args.Item.Equals(playerPivotItem))
@@ -184,11 +206,11 @@ namespace ACast
             context.Post(updateFeedItemsListView, null);
         }
 
-        private void updateFeedItemsListView(object state)
+        private async void updateFeedItemsListView(object state)
         {
-            feedItemsListView.ItemsSource = null;
             feedItemsListView.ItemsSource = new FeedItemsIncrementalLoading();
-            
+            await feedItemsListView.LoadMoreItemsAsync();
+
             pivot.SelectedItem = feedDetailsPivotItem;
         }
 
@@ -259,6 +281,45 @@ namespace ACast
         public RefreshFeedButton()
         {
             Icon = new SymbolIcon(Symbol.Refresh);
+        }
+    }
+
+    public class SearchFeedButton : AppBarButton
+    {
+        public event EventHandler<FeedItem> Match;
+
+        public static SearchFeedButton Instance = new SearchFeedButton();
+
+        public SearchFeedButton()
+        {
+            Icon = new SymbolIcon(Symbol.Scan);
+            Click += SearchFeedButton_Click;
+        }
+
+        private void SearchFeedButton_Click(object sender, RoutedEventArgs e)
+        {
+
+            //var items = from item in FeedManager.Instance.CurrentFeedItems where item.Summary.Contains("Wahrheit") select item;
+            var currentFeedItems = from item in FeedManager.Instance.CurrentFeedItems where item.Summary.Contains("Wahrheit") select item;
+            var y = currentFeedItems.Count();
+
+            MenuFlyout flyout = new MenuFlyout();
+            foreach (var item in currentFeedItems)
+            {
+                var mi = new MenuFlyoutItem() { Text = item.Title, Tag = item };
+                mi.Click += Mi_Click;
+                flyout.Items.Add(mi);
+            }
+
+            flyout.ShowAt(this);
+        }
+
+        private void Mi_Click(object sender, RoutedEventArgs e)
+        {
+            FeedItem item = (sender as MenuFlyoutItem).Tag as FeedItem;
+
+            if (Match != null)
+                Match(this, item);
         }
     }
 }
