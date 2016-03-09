@@ -1,4 +1,5 @@
-﻿using ACastShared;
+﻿using ACast.DataBinding;
+using ACastShared;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -21,7 +22,6 @@ namespace ACast
     {
         private SynchronizationContext context;
         private int currentFeedIdx = 0;
-        private GeneratorIncrementalLoadingClass<FeedDetailsListViewItem> feedItems;
 
         public MainPage()
         {
@@ -184,28 +184,13 @@ namespace ACast
             context.Post(updateFeedItemsListView, null);
         }
 
-        private async void updateFeedItemsListView(object state)
+        private void updateFeedItemsListView(object state)
         {
-            feedItems = new GeneratorIncrementalLoadingClass<FeedDetailsListViewItem>(
-                (uint)FeedManager.Instance.CurrentFeedItems.Count,
-                getItem
-            );
-
-            feedItemsListView.ItemsSource = feedItems;
-            
-            await feedItems.LoadMoreItemsAsync(
-                (uint)Math.Min(5, FeedManager.Instance.CurrentFeedItems.Count)
-            );
+            feedItemsListView.ItemsSource = null;
+            feedItemsListView.ItemsSource = new FeedItemsIncrementalLoading();
             
             pivot.SelectedItem = feedDetailsPivotItem;
         }
-
-        private FeedDetailsListViewItem getItem(int count)
-        {
-            //DebugService.Add(count);
-            var feedItem = FeedManager.Instance.CurrentFeedItems[count];
-            return new FeedDetailsListViewItem(feedItem);
-        }                
 
         private void feedListDeletedAsync()
         {
