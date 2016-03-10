@@ -240,6 +240,20 @@ namespace ACastBackgroundAudioTask
                     if (!result)
                         throw new Exception("Background Task didnt initialize in time");
 
+                    if (currentPlaybackItem == null)
+                    {
+                        var trackId = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.TrackId);
+                        var trackposition = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.Position);
+                        if (trackId != null && trackposition != null)
+                        {
+                            BackgroundMediaPlayer.Current.SetUriSource(new Uri(trackId.ToString()));
+                            TimeSpan timeSpan;
+                            if (TimeSpan.TryParse(trackposition.ToString(), out timeSpan))
+                            {
+                                BackgroundMediaPlayer.Current.Position = timeSpan;
+                            }
+                        }
+                    }
                     BackgroundMediaPlayer.Current.Play();
                     break;
                 case SystemMediaTransportControlsButton.Pause:
