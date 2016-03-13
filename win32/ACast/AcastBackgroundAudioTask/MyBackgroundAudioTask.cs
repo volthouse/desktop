@@ -156,8 +156,12 @@ namespace ACastBackgroundAudioTask
                 backgroundTaskStarted.Reset();
 
                 // save state
-                ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.TrackId, GetCurrentTrackId() == null ? null : GetCurrentTrackId().ToString());
-                ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.Position, BackgroundMediaPlayer.Current.Position.ToString());
+                ApplicationSettingsHelper.SaveSettingsValue(
+                    ApplicationSettingsConstants.TrackId, GetCurrentTrackId() == null ? null : GetCurrentTrackId().ToString()
+                );
+                ApplicationSettingsHelper.SaveSettingsValue(
+                    ApplicationSettingsConstants.Position, BackgroundMediaPlayer.Current.Position.ToString()
+                );
                 //ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.BackgroundTaskState, BackgroundTaskState.Canceled.ToString());
                 //ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.AppState, Enum.GetName(typeof(AppState), foregroundAppState));
 
@@ -242,25 +246,22 @@ namespace ACastBackgroundAudioTask
 
                     if (currentPlaybackItem == null)
                     {
-                        var trackId = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.TrackId);
-                        var trackposition = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.Position);
-                        if (trackId != null && trackposition != null)
-                        {
-                            BackgroundMediaPlayer.Current.SetUriSource(new Uri(trackId.ToString()));
-                            TimeSpan timeSpan;
-                            if (TimeSpan.TryParse(trackposition.ToString(), out timeSpan))
-                            {
-                                BackgroundMediaPlayer.Current.Position = timeSpan;
-                            }
-                        }
+                        var currentTrackId = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.TrackId);
+                        var currentTrackPosition = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.Position);
+
+                        currentPlaybackItem = MediaPlaybackItem.Create(currentTrackId, currentTrackPosition);
+                        playbackCurrentItemChanged(currentPlaybackItem);
+                        currentPlaybackItem.Play();
+                    } else
+                    {
+                        currentPlaybackItem.Resume();
                     }
-                    BackgroundMediaPlayer.Current.Play();
                     break;
                 case SystemMediaTransportControlsButton.Pause:
                     Debug.WriteLine("UVC pause button pressed");
                     try
                     {
-                        BackgroundMediaPlayer.Current.Pause();
+                        currentPlaybackItem.Pause();
                     }
                     catch (Exception ex)
                     {
@@ -297,14 +298,8 @@ namespace ACastBackgroundAudioTask
             // Update the system view
             UpdateUVCOnNewTrack(item);
 
-            // Get the current track
-            Uri currentTrackId = null;
-            if (item != null)
-                currentTrackId = item.Source; //.CustomProperties[TrackIdKey] as Uri;
-
-            // Notify foreground of change or persist for later
             //if (foregroundAppState == AppState.Active)
-                MessageService.SendMessageToForeground(new TrackChangedMessage(currentTrackId));
+                MessageService.SendMessageToForeground(new TrackChangedMessage(item.Source));
             //else
             //    ApplicationSettingsHelper.SaveSettingsValue(TrackIdKey, currentTrackId == null ? null : currentTrackId.ToString());
         }
@@ -341,7 +336,9 @@ namespace ACastBackgroundAudioTask
                 Debug.WriteLine("App suspending"); // App is suspended, you can save your task state at this point
                 //foregroundAppState = AppState.Suspended;
                 var currentTrackId = GetCurrentTrackId();
-                //ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.TrackId, currentTrackId == null ? null : currentTrackId.ToString());
+                ApplicationSettingsHelper.SaveSettingsValue(
+                    ApplicationSettingsConstants.TrackId, currentTrackId == null ? null : currentTrackId.ToString()
+                );
                 return;
             }
 
@@ -356,13 +353,9 @@ namespace ACastBackgroundAudioTask
             StartTrackMessage startTrackMessage;
             if (MessageService.TryParseMessage(e.Data, out startTrackMessage))
             {
-                currentPlaybackItem = new MediaPlaybackItem();
-                currentPlaybackItem.Source = startTrackMessage.TrackId;
-
+                currentPlaybackItem = MediaPlaybackItem.Create(startTrackMessage.TrackId);
                 playbackCurrentItemChanged(currentPlaybackItem);
-
-                BackgroundMediaPlayer.Current.SetUriSource(startTrackMessage.TrackId);
-                BackgroundMediaPlayer.Current.Play();
+                currentPlaybackItem.Play();
             }
 
             ResumePlaybackMessage resumePlaybackMessage;
@@ -371,21 +364,10 @@ namespace ACastBackgroundAudioTask
                 var currentTrackId = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.TrackId);
                 var currentTrackPosition = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.Position);
 
-                currentPlaybackItem = new MediaPlaybackItem();
-                currentPlaybackItem.Source = new Uri(currentTrackId.ToString());
-
+                currentPlaybackItem = MediaPlaybackItem.Create(currentTrackId, currentTrackPosition);
                 playbackCurrentItemChanged(currentPlaybackItem);
 
-                BackgroundMediaPlayer.Current.SetUriSource(startTrackMessage.TrackId);
-                TimeSpan timeSpan;
-
-                if (TimeSpan.TryParse(currentTrackPosition.ToString(), out timeSpan))
-                {
-                    BackgroundMediaPlayer.Current.Position = timeSpan;
-                }
-                
-                BackgroundMediaPlayer.Current.Play();
-
+                currentPlaybackItem.Play();
             }
 
             IsBackgroundServiceAlive isBackgroundServiceAlive;
@@ -399,6 +381,14 @@ namespace ACastBackgroundAudioTask
             {
                 sleepTimer = new Timer(sleepTimerCallback, null, setSleepTimerMessage.DurationMs, 0);
             }
+        }
+
+        private void StartPlayback(StartTrackMessage startTrackMessage)
+        {
+            playbackCurrentItemChanged(currentPlaybackItem);
+
+            BackgroundMediaPlayer.Current.SetUriSource(startTrackMessage.TrackId);
+            BackgroundMediaPlayer.Current.Play();
         }
         #endregion
 
