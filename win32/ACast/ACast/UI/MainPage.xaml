@@ -19,6 +19,11 @@
         </PivotItem>
         <PivotItem x:Name="feedDetailsPivotItem" Header="Items">
             <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <AutoSuggestBox x:Name="serachFeedDetailsBox" PlaceholderText="Search"/>
                 <ListView x:Name="feedItemsListView" IsItemClickEnabled="True" Grid.Row="1" Margin="0,0.333,0,-2.167"/>
             </Grid>
         </PivotItem>

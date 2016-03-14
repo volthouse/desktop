@@ -25,6 +25,8 @@ namespace ACast
         private SynchronizationContext context;
         private int currentFeedIdx = 0;
 
+        private SearchFeedButton searchFeedDetailsButton;
+
         public MainPage()
         {
            Player.Instance = new Player();
@@ -46,8 +48,28 @@ namespace ACast
             RefreshFeedButton.Instance.Click += refreshButton_Click;
             RemoveFeedButton.Instance.Click += cleanAllButton_Click;
 
-            SearchFeedButton.Instance.Match += Instance_Match;
+            searchFeedDetailsButton = new SearchFeedButton(serachFeedDetailsBox);
+            searchFeedDetailsButton.SearchChanged += searchFeedDetailsButton_SearchChanged;
+            searchFeedDetailsButton.SearchCanceled += searchFeedDetailsButton_SearchCanceled;
 
+            serachFeedDetailsBox.Visibility = Visibility.Collapsed;
+
+        }
+
+        void searchFeedDetailsButton_SearchCanceled(object sender, EventArgs e)
+        {
+            updateFeedItemsListView(null); ;
+        }
+
+        void searchFeedDetailsButton_SearchChanged(object sender, IList<FeedItem> e)
+        {
+            List<FeedDetailsListViewItem> items = new List<FeedDetailsListViewItem>();
+ 	        foreach (var item in e)
+	        {
+		        items.Add(new FeedDetailsListViewItem(item));
+	        }
+
+            feedItemsListView.ItemsSource = items;
         }
 
         private async void Instance_Match(object sender, FeedItem e)
@@ -110,7 +132,7 @@ namespace ACast
             {
                 this.commandBar.PrimaryCommands.Clear();
                 this.commandBar.PrimaryCommands.Add(RefreshFeedButton.Instance);
-                this.commandBar.PrimaryCommands.Add(SearchFeedButton.Instance);
+                this.commandBar.PrimaryCommands.Add(searchFeedDetailsButton);
                 this.commandBar.Visibility = Visibility.Visible;
             }
             else if (args.Item.Equals(playerPivotItem))
@@ -286,40 +308,72 @@ namespace ACast
 
     public class SearchFeedButton : AppBarButton
     {
-        public event EventHandler<FeedItem> Match;
+        private AutoSuggestBox textBox;
 
-        public static SearchFeedButton Instance = new SearchFeedButton();
+        public event EventHandler<IList<FeedItem>> SearchChanged;
 
-        public SearchFeedButton()
+        public event EventHandler SearchCanceled;
+
+        public SearchFeedButton(AutoSuggestBox textBox)
         {
-            Icon = new SymbolIcon(Symbol.Scan);
-            Click += SearchFeedButton_Click;
+            this.textBox = textBox;
+            this.textBox.KeyDown += textBox_KeyDown;
+            //this.textBox.
+            Icon = new SymbolIcon(Symbol.Zoom);
+            this.Click += SearchFeedButton_Click;
         }
+
+        //void textBox_GotFocus(object sender, RoutedEventArgs e)
+        //{
+        //    Windows.UI.ViewManagement.InputPane.GetForCurrentView().TryShow();
+        //}
 
         private void SearchFeedButton_Click(object sender, RoutedEventArgs e)
         {
-
-            //var items = from item in FeedManager.Instance.CurrentFeedItems where item.Summary.Contains("Wahrheit") select item;
-            var currentFeedItems = from item in FeedManager.Instance.CurrentFeedItems where item.Summary.Contains("Wahrheit") select item;
-            var y = currentFeedItems.Count();
-
-            MenuFlyout flyout = new MenuFlyout();
-            foreach (var item in currentFeedItems)
+            switch (textBox.Visibility)
             {
-                var mi = new MenuFlyoutItem() { Text = item.Title, Tag = item };
-                mi.Click += Mi_Click;
-                flyout.Items.Add(mi);
+                case Visibility.Collapsed:
+                    Icon = new SymbolIcon(Symbol.Cancel);
+                    textBox.Visibility = Visibility.Visible;
+                    //Windows.UI.Xaml.Input.FocusManager.
+                    
+                       
+                    break;
+                case Visibility.Visible:
+                    Icon = new SymbolIcon(Symbol.Zoom);
+                    textBox.Visibility = Visibility.Collapsed;
+                    if (SearchCanceled != null)
+                    {
+                        SearchCanceled(this, EventArgs.Empty);
+                    }
+                    break;
+                default:
+                    break;
             }
-
-            flyout.ShowAt(this);
         }
 
-        private void Mi_Click(object sender, RoutedEventArgs e)
+        private void textBox_KeyDown(object sender, Windows.UI.Xaml.Input.KeyRoutedEventArgs e)
         {
-            FeedItem item = (sender as MenuFlyoutItem).Tag as FeedItem;
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                textBox.Items.Add(textBox.Text);                
+                //textBox.Visibility = Visibility.Collapsed;
+                //Icon = new SymbolIcon(Symbol.Zoom);
+                //Windows.UI.ViewManagement.InputPane.GetForCurrentView().TryHide();
+                //textBox.Focus(FocusState.Unfocused);
+                search(textBox.Text);                
+            }
+        }
 
-            if (Match != null)
-                Match(this, item);
+        private void search(string searchText)
+        {
+            var currentFeedItems = from item in FeedManager.Instance.CurrentFeedItems where item.Summary.Contains(searchText) select item;
+
+            List<FeedItem> items = new List<FeedItem>(currentFeedItems);
+            if (SearchChanged != null)
+            {
+                SearchChanged(this, items);
+            }
         }
     }
 }
