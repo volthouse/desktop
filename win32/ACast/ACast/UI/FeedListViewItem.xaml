@@ -5,7 +5,7 @@
     xmlns:local="using:ACast"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d" Height="150" Width="500" Margin="0,0,0,5">
+    mc:Ignorable="d" Height="150" Width="Auto" Margin="0,0,0,5">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition MaxWidth="150"/>
@@ -16,7 +16,7 @@
         </Grid.RowDefinitions>
         <Image x:Name="image" Stretch="UniformToFill" Margin="0"/>
         <Grid Grid.Column="1" Margin="5,0,0,0" Background="#FF212020">
-            <TextBlock x:Name="textBox" Text="Text" FontSize="18.667" TextWrapping="Wrap" Margin="5,5,0,0"/>
+            <TextBlock x:Name="textBox" Text="Dies ist ein extra langer Text, damit soll geprüft werden wie ein solcher Text dargestellt wird." FontSize="18.667" TextWrapping="Wrap" Margin="5,5,0,0"/>
         </Grid>
     </Grid>
 </UserControl>
