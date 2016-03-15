@@ -179,12 +179,13 @@ namespace ACast
                 if (feedItems.Count() > 0)
                 {
                     FeedItem item = feedItems.First();
-                    item.DownloadState = FeedDownloadState.DownloadCompleted;
+                    item.SetState(FeedDownloadState.DownloadCompleted);
                     item.FileName = feedItem.FileName;
                     item.Path = feedItem.Path;
                 }               
                 
                 CurrentFeed.Serialize();
+                SerializeFeeds();
             }
 
         }
@@ -246,21 +247,21 @@ namespace ACast
             //var newSyndicationItems = from item in syndicationFeed.Items where item.PublishedDate < feed.LastUpdateDate select item;
 
 
-            if(CurrentFeed.Items.Count > 0)
+            if(feed.Items.Count > 0)
             {
                 foreach (var syndicationItem in newSyndicationItems)
                 {
-                    CurrentFeed.Items.Insert(0, new FeedItem(feed.Id, syndicationItem));
+                    feed.Items.Insert(0, new FeedItem(feed.Id, syndicationItem));
                 }
             } else
             {
                 foreach (var syndicationItem in newSyndicationItems)
                 {
-                    CurrentFeed.Items.Add(new FeedItem(feed.Id, syndicationItem));
+                    feed.Items.Add(new FeedItem(feed.Id, syndicationItem));
                 }
             }
 
-            CurrentFeed.Serialize();
+            feed.Serialize();
 
             if (serializeFeedList)
             {
@@ -423,6 +424,8 @@ namespace ACast
 
     public class Feed : INotifyPropertyChanged
     {
+        private int mediaDownloadCount;
+
         public Feed()
         {
             Title = string.Empty;
@@ -431,7 +434,7 @@ namespace ACast
             Uri = string.Empty;
             FileName = string.Empty;
             ImageUri = string.Empty;
-            ItemsFilename = string.Empty;
+            ItemsFilename = string.Empty; // "FeedItems_" + Guid.NewGuid().ToString() +".dat";
             MediaDownloadCount = 0;
             Items = new FeedItems();
         }
@@ -458,7 +461,13 @@ namespace ACast
         [XmlIgnore]
         public DateTimeOffset LastUpdateDate;
 
-        public int MediaDownloadCount;
+        public int MediaDownloadCount {
+            get { return mediaDownloadCount; }
+            set {
+                mediaDownloadCount = value;
+                onPropertyChanged("MediaDownloadCount");
+            }
+        }
 
         public override string ToString()
         {
@@ -485,6 +494,14 @@ namespace ACast
             StorageFolder folder = await StorageFolder.GetFolderFromPathAsync(path);
             StorageFile file = await folder.GetFileAsync(ItemsFilename);
             await file.DeleteAsync(StorageDeleteOption.PermanentDelete);
+        }
+
+        private void onPropertyChanged(string propertyName)
+        {
+            if(PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
         }
     }
 

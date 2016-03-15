@@ -43,8 +43,10 @@ namespace ACastShared
             if (Position > TimeSpan.Zero)
             {
                 BackgroundMediaPlayer.Current.Position = Position;
+            } else
+            {
+                BackgroundMediaPlayer.Current.Play();
             }
-            BackgroundMediaPlayer.Current.Play();
         }
 
         public void Resume()

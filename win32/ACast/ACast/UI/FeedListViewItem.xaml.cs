@@ -34,8 +34,22 @@ namespace ACast
         public void SetItem(Feed item)
         {
             titleTextBox.Text = item.Title;// +" dies ist ein Test";
-            infoTextBox.Text = string.Format("Downloaded %d", item.MediaDownloadCount);
             image.Source = new BitmapImage(new Uri(item.ImageUri));
+
+            update(item);
+            item.PropertyChanged += feedPropertyChanged;
+        }
+
+        private void update(Feed item)
+        {
+            infoTextBox.Text = string.Format("Downloaded {0}", item.MediaDownloadCount);
+        }
+
+        private void feedPropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            Feed feed = sender as Feed;
+            if(feed != null)
+                update(feed);
         }
 
         protected override Size MeasureOverride(Size availableSize)

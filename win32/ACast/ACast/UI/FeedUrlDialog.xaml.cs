@@ -40,6 +40,7 @@ namespace ACast
             urlCombo.Items.Add("http://www.br-online.de/podcast/radiowissen/cast.xml");
             urlCombo.Items.Add("http://raumzeit-podcast.de/feed/mp3/");
             urlCombo.Items.Add("http://sternengeschichten.podspot.de/rss");
+            urlCombo.Items.Add("http://www.br-online.de/podcast/fitnessmagazin/cast.xml");
         }
 
         private void ContentDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using Windows.Data.Html;
 using Windows.Media;
 using Windows.Media.Playback;
 using Windows.UI.Xaml;
@@ -109,9 +110,14 @@ namespace ACast
                 }
 
                 posSlider.Value = Player.Instance.RelativePosition;
-                textBox.Text = e.ToString();
 
             }), null);
+        }
+
+        public void Play(FeedItem feedItem)
+        {
+            textBox.Text = HtmlUtilities.ConvertToText(feedItem.Summary);
+            Player.Instance.Play(feedItem);
         }
 
         void playButton_Click(object sender, RoutedEventArgs e)

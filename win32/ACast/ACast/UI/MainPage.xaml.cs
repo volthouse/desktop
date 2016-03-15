@@ -32,11 +32,15 @@ namespace ACast
         private SelectButton selectButton;
         private CancelButton cancelButton;
 
+        public static MainPage Instance;
+
         public MainPage()
         {
-           Player.Instance = new Player();
+            Player.Instance = new Player();
 
-           this.InitializeComponent();
+            Instance = this;
+
+            this.InitializeComponent();
 
             context = SynchronizationContext.Current;
 
@@ -91,6 +95,12 @@ namespace ACast
             }
         }
 
+        public void Play(FeedItem feedItem)
+        {
+            pivot.SelectedItem = playerPivotItem;
+            playerControl.Play(feedItem);
+        }
+
         void selectButton_Click(object sender, RoutedEventArgs e)
         {
             if (pivot.SelectedItem.Equals(feedDetailsPivotItem))
@@ -141,10 +151,17 @@ namespace ACast
             Application.Current.Suspending += app_Suspending;
             Application.Current.Resuming += app_Resuming;
 
+            var currentTrackId = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.TrackId);
+            var currentTrackPosition = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.Position);
+            if (currentTrackId != null)
+                DebugService.Add(currentTrackId.ToString());
+            if (currentTrackPosition != null)
+                DebugService.Add(currentTrackPosition.ToString());
         }
 
         private void app_Resuming(object sender, object e)
         {
+            
             Player.Instance.ForegroundAppResuming();
         }
 

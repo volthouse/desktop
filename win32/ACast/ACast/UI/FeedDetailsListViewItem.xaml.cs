@@ -78,12 +78,12 @@ namespace ACast
 
         private void playButton_Click(object sender, RoutedEventArgs e)
         {
-            Player.Instance.Play(FeedItem);
+            MainPage.Instance.Play(FeedItem);
         }
 
         protected override Size MeasureOverride(Size availableSize)
         {
-            //textBox.Width = availableSize.Width * mainGrid.ColumnDefinitions[0].Width.Value / 100;
+            textBox.Width = availableSize.Width * mainGrid.ColumnDefinitions[0].Width.Value / 100;
             return base.MeasureOverride(availableSize);
         }
     }
