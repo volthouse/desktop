@@ -14,7 +14,6 @@ namespace ACast
     {
         private SynchronizationContext context;
         private DispatcherTimer timer;
-        private SystemMediaTransportControls smtc;
 
         public PlayerControl()
         {

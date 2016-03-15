@@ -19,12 +19,13 @@ using Windows.UI.Xaml.Navigation;
 
 namespace ACast
 {
-    public sealed partial class FeedDetailsListViewItem : UserControl
+    public sealed partial class FeedDetailsListViewItem : Button    //UserControl
     {
         private SynchronizationContext context;
 
         public FeedItem FeedItem { get; private set; }
 
+        public FeedDetailsListViewItem() { }
 
         public FeedDetailsListViewItem(FeedItem feedItem)
         {
@@ -78,10 +79,12 @@ namespace ACast
         private void playButton_Click(object sender, RoutedEventArgs e)
         {
             Player.Instance.Play(FeedItem);
-            //string path = ApplicationData.Current.LocalFolder.Path + @"\" + FeedItem.FileName;
-            //mediaElement.Source = new Uri(path);
-            //mediaElement.Play();
         }
-        
+
+        protected override Size MeasureOverride(Size availableSize)
+        {
+            //textBox.Width = availableSize.Width * mainGrid.ColumnDefinitions[0].Width.Value / 100;
+            return base.MeasureOverride(availableSize);
+        }
     }
 }

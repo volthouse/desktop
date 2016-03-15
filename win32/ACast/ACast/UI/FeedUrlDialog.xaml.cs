@@ -57,8 +57,7 @@ namespace ACast
                 args.Cancel = true;
                 //FeedUrl = feedUrl.Text;
                 FeedUrl = urlCombo.SelectedItem.ToString();
-                FeedManager.Instance.AddFeedCompletedAsync += AddFeedCompletedAsync;
-                FeedManager.Instance.AddFeed(FeedUrl);
+                FeedManager.Instance.AddFeed(FeedUrl, AddFeedCompletedAsync);
             //}            
         }
 
@@ -67,9 +66,8 @@ namespace ACast
             FeedUrl = "";
         }
 
-        private void AddFeedCompletedAsync()
+        private void AddFeedCompletedAsync(object sender)
         {
-            FeedManager.Instance.AddFeedCompletedAsync -= AddFeedCompletedAsync;
             this.Hide();            
         }
 

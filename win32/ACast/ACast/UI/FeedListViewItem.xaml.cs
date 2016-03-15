@@ -28,15 +28,21 @@ namespace ACast
 
         public void SetText(string text)
         {
-            textBox.Text = text;
+            titleTextBox.Text = text;
         }
 
         public void SetItem(Feed item)
         {
-            textBox.Text = item.Title;
-
+            titleTextBox.Text = item.Title;// +" dies ist ein Test";
+            infoTextBox.Text = string.Format("Downloaded %d", item.MediaDownloadCount);
             image.Source = new BitmapImage(new Uri(item.ImageUri));
         }
 
+        protected override Size MeasureOverride(Size availableSize)
+        {
+            titleTextBox.Width = availableSize.Width * mainGrid.ColumnDefinitions[1].Width.Value / 100;
+            infoTextBox.Width = titleTextBox.Width;
+            return base.MeasureOverride(availableSize);
+        }
     }
 }

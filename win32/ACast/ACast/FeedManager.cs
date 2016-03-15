@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -21,36 +22,15 @@ using Windows.Web.Syndication;
 
 namespace ACast
 {
-    public delegate void DownloadProgressHandler(float percent);
-    public delegate void DownloadCompletedHandler();
-    public delegate void FeedUpdateCompletedHandler();
-    public delegate void FeedDeserializeCompletedHandler();
-    public delegate void AddFeedCompletedHandler();
-    public delegate void FeedListLoadedHandler();
-    public delegate void FeedActivatedHandler();
-    public delegate void FeedListDeletedHandler();
-
     public class FeedManager : Windows.ApplicationModel.Background.IBackgroundTask
     {
         private CancellationTokenSource cts;
-
         private List<DownloadOperation> activeDownloads;
         private List<FeedDownload> activeFeedItemDownloads;
-        
-        private List<Feed> feedList = new List<Feed>();
+        private List<Feed> feeds = new List<Feed>();
                 
-        public DownloadProgressHandler DownloadProgressAsync;
-        public DownloadCompletedHandler DownloadCompletedAsync;
-        public FeedUpdateCompletedHandler FeedUpdateCompletedAsync;
-        public FeedDeserializeCompletedHandler FeedDeserializeCompletedAsync;
-        public AddFeedCompletedHandler AddFeedCompletedAsync;
-        public FeedListLoadedHandler FeedListLoadedAsync;
-        public FeedActivatedHandler FeedActivatedAsync;
-        public FeedListDeletedHandler FeedListDeletedAsync;
-        
         public static FeedManager Instance = new FeedManager();
 
-        public List<FeedItem> CurrentFeedItems;
         public Feed CurrentFeed;
 
         public FeedManager()
@@ -61,91 +41,26 @@ namespace ACast
             activeFeedItemDownloads = new List<FeedDownload>();
                         
             CurrentFeed = new Feed();
-            CurrentFeedItems = new List<FeedItem>();                        
         }
 
-        public IReadOnlyList<Feed> FeedList
+        public IReadOnlyList<Feed> Feeds
         {
-            get { return feedList; }
+            get { return feeds; }
         }
 
-        public async void ActiveFeedAsync(int feedIdx)
+        public async void ActivateFeedAsync(int feedIdx, SendOrPostCallback feedActivatedAsync)
         {
-            CurrentFeed = feedList[feedIdx];
-            CurrentFeedItems = await LoadFeedItemsAsync(CurrentFeed.ItemsFilename);
+            CurrentFeed = feeds[feedIdx];
 
-            if (FeedActivatedAsync != null)
+            await CurrentFeed.Activate();
+
+            if (feedActivatedAsync != null)
             {
-                FeedActivatedAsync();
+                feedActivatedAsync(this);
             }
-        }
+        }             
 
-        public void DeactiveCurrentFeed()
-        {
-            if (!string.IsNullOrEmpty(CurrentFeed.ItemsFilename))
-            {
-                SerializeFeedItems(CurrentFeed.ItemsFilename, CurrentFeedItems);
-            }            
-
-            CurrentFeed = new Feed();
-            CurrentFeedItems = new List<FeedItem>();           
-        }
-
-        public async void LoadFeedListAsync()
-        {
-            if (await FileExtensions.FileExist2(ApplicationData.Current.LocalFolder, "FeedList.dat"))
-            {
-                StorageFile file = await ApplicationData.Current.LocalFolder.GetFileAsync("FeedList.dat");
-
-                var deserializeStream = await file.OpenStreamForReadAsync();
-                XmlSerializer deserializer = new XmlSerializer(typeof(List<Feed>));
-                feedList = (List<Feed>)deserializer.Deserialize(deserializeStream);
-                deserializeStream.Dispose();
-            }
-
-            if (FeedListLoadedAsync != null)
-            {
-                FeedListLoadedAsync();
-            }
-        }
-
-        public async Task<List<FeedItem>> LoadFeedItemsAsync(string fileName)
-        {
-            List<FeedItem> feedItems = new List<FeedItem>();
-
-            if (await FileExtensions.FileExist2(ApplicationData.Current.LocalFolder, fileName))
-            {
-                StorageFile file = await ApplicationData.Current.LocalFolder.GetFileAsync(fileName);
-
-                var deserializeStream = await file.OpenStreamForReadAsync();
-                XmlSerializer deserializer = new XmlSerializer(typeof(List<FeedItem>));
-                feedItems = (List<FeedItem>)deserializer.Deserialize(deserializeStream);
-                deserializeStream.Dispose();
-            }
-
-            return feedItems;
-        }
-
-        public async void DeleteFeedList()
-        {
-            if (await FileExtensions.FileExist2(ApplicationData.Current.LocalFolder, "FeedList.dat"))
-            {
-                StorageFile file = await ApplicationData.Current.LocalFolder.GetFileAsync("FeedList.dat");
-
-                await file.DeleteAsync();
-
-                // TODO: delete feed files
-
-                feedList.Clear();
-            }
-
-            if (FeedListDeletedAsync != null)
-            {
-                FeedListDeletedAsync();
-            }
-        }
-
-        public async void AddFeed(string stringUri)
+        public async void AddFeed(string stringUri, SendOrPostCallback addFeedCompletedAsync)
         {
             Uri uri;
             if (!Uri.TryCreate(stringUri.Trim(), UriKind.Absolute, out uri))
@@ -154,7 +69,7 @@ namespace ACast
                 return;
             }
 
-            var existingItem = from item in feedList where item.Uri.CompareTo(uri.ToString()) == 0 select item;
+            var existingItem = from item in feeds where item.Uri.CompareTo(uri.ToString()) == 0 select item;
 
             if (existingItem.Count() == 0)
             {              
@@ -173,9 +88,9 @@ namespace ACast
                         await DownloadFile(feed.ImageUri.ToString(), ApplicationData.Current.LocalFolder, feed.FileName + ".img");
                     }
 
-                    feedList.Add(feed);
+                    feeds.Add(feed);
 
-                    SerializeFeedList();
+                    SerializeFeeds();
                 }
                 catch /*(Exception)*/
                 {
@@ -185,38 +100,47 @@ namespace ACast
                 
             }
 
-            if (AddFeedCompletedAsync != null)
+            if (addFeedCompletedAsync != null)
             {
-                AddFeedCompletedAsync();
+                addFeedCompletedAsync(this);
             }
         }
 
-        public async void SerializeFeedList()
+        public async void RemoveFeed(int feedIdx)
+        {
+            if(feedIdx >= 0 && feedIdx < feeds.Count) {
+                await feeds[feedIdx].Delete();
+            }
+
+            SerializeFeeds();
+        }
+
+        public async void DeserializeFeedsAsync(SendOrPostCallback feedListLoadedAsync)
+        {
+            if (await FileExtensions.FileExist2(ApplicationData.Current.LocalFolder, "FeedList.dat"))
+            {
+                StorageFile file = await ApplicationData.Current.LocalFolder.GetFileAsync("FeedList.dat");
+
+                var deserializeStream = await file.OpenStreamForReadAsync();
+                XmlSerializer deserializer = new XmlSerializer(typeof(List<Feed>));
+                feeds = (List<Feed>)deserializer.Deserialize(deserializeStream);
+                deserializeStream.Dispose();
+            }
+
+            if (feedListLoadedAsync != null)
+            {
+                feedListLoadedAsync(this);
+            }
+        }
+
+        public async void SerializeFeeds()
         {
 
             try
             {
                 var serializeStream = await ApplicationData.Current.LocalFolder.OpenStreamForWriteAsync("FeedList.dat", CreationCollisionOption.ReplaceExisting);
                 XmlSerializer serializer = new XmlSerializer(typeof(List<Feed>));
-                serializer.Serialize(serializeStream, feedList);
-                serializeStream.Flush();
-                serializeStream.Dispose();
-            }
-            catch /*(Exception)*/
-            {
-
-                //throw;
-            }          
-        }
-
-        public async void SerializeFeedItems(string fileName, List<FeedItem> items)
-        {
-
-            try
-            {
-                var serializeStream = await ApplicationData.Current.LocalFolder.OpenStreamForWriteAsync(fileName, CreationCollisionOption.ReplaceExisting);
-                XmlSerializer serializer = new XmlSerializer(typeof(List<FeedItem>));
-                serializer.Serialize(serializeStream, items);
+                serializer.Serialize(serializeStream, feeds);
                 serializeStream.Flush();
                 serializeStream.Dispose();
             }
@@ -225,19 +149,7 @@ namespace ACast
 
                 //throw;
             }
-        }
-
-        public async void LoadFeed(int i, SyndicationFeed feed)
-        {
-            if (feedList.Count == 0)
-            {
-                return;
-            }
-
-            Feed infoItem = feedList[i];
-
-            await DeserializeFeed(feed, infoItem.FileName);
-        }
+        } 
 
         public async void StartDownloadMedia(FeedItem feedItem) {
             feedItem.FileName = Guid.NewGuid() + ".mp3";
@@ -255,30 +167,24 @@ namespace ACast
 
             await DownloadFile(feedItem.Uri, ApplicationData.Current.LocalFolder, feedItem.FileName);
 
-            var feeds = from item in feedList where item.Id.CompareTo(feedItem.ParentId) == 0 select item;
+            var feeds = from item in this.feeds where item.Id.CompareTo(feedItem.ParentId) == 0 select item;
 
             if (feeds.Count() > 0)
             {
                 Feed feed = feeds.First();
 
-                List<FeedItem> items = await LoadFeedItemsAsync(feed.ItemsFilename);
-                var feedItems = from item in items where item.Id.CompareTo(feedItem.Id) == 0 select item;
+                feed.MediaDownloadCount++;
+
+                var feedItems = from item in CurrentFeed.Items where item.Id.CompareTo(feedItem.Id) == 0 select item;
                 if (feedItems.Count() > 0)
                 {
                     FeedItem item = feedItems.First();
                     item.DownloadState = FeedDownloadState.DownloadCompleted;
                     item.FileName = feedItem.FileName;
                     item.Path = feedItem.Path;
-                }
-
-                SerializeFeedItems(feed.ItemsFilename, items);
+                }               
                 
-                var currentFeedItems = from item in CurrentFeedItems where item.Id.CompareTo(feedItem.Id) == 0 select item;
-                if (currentFeedItems.Count() > 0)
-                {
-                    FeedItem item = currentFeedItems.First();
-                    item.SetState(FeedDownloadState.DownloadCompleted);
-                }
+                CurrentFeed.Serialize();
             }
 
         }
@@ -340,69 +246,29 @@ namespace ACast
             //var newSyndicationItems = from item in syndicationFeed.Items where item.PublishedDate < feed.LastUpdateDate select item;
 
 
-            List<FeedItem> feedItems = await LoadFeedItemsAsync(feed.ItemsFilename);
-
-            if(feedItems.Count > 0)
+            if(CurrentFeed.Items.Count > 0)
             {
                 foreach (var syndicationItem in newSyndicationItems)
                 {
-                    feedItems.Insert(0, new FeedItem(feed.Id, syndicationItem));
+                    CurrentFeed.Items.Insert(0, new FeedItem(feed.Id, syndicationItem));
                 }
             } else
             {
                 foreach (var syndicationItem in newSyndicationItems)
                 {
-                    feedItems.Add(new FeedItem(feed.Id, syndicationItem));
+                    CurrentFeed.Items.Add(new FeedItem(feed.Id, syndicationItem));
                 }
             }
 
-            SerializeFeedItems(feed.ItemsFilename, feedItems);
-
-            feed.LastUpdateDate = DateTimeOffset.Now;
+            CurrentFeed.Serialize();
 
             if (serializeFeedList)
             {
-                SerializeFeedList();
+                SerializeFeeds();
             }            
 
-            if (FeedUpdateCompletedAsync != null)
-            {
-                FeedUpdateCompletedAsync();
-            }
-
-            return;
         }
 
-        public async Task SerializeFeedAsync(SyndicationFeed feed, string fileName)
-        {
-            StorageFile file = await ApplicationData.Current.LocalFolder.CreateFileAsync(fileName, CreationCollisionOption.GenerateUniqueName);
-
-            var doc = feed.GetXmlDocument(feed.SourceFormat);
-
-            await doc.SaveToFileAsync(file);
-        }
-
-        public async Task DeserializeFeed(SyndicationFeed feed, string fileName)
-        {
-            try
-            {
-                StorageFile file = await ApplicationData.Current.LocalFolder.GetFileAsync(fileName);
-                XmlDocument doc = await XmlDocument.LoadFromFileAsync(file);
-                feed.LoadFromXml(doc);
-            }
-            catch (Exception)
-            {
-                // ignore
-            }
-            finally
-            {
-                if (FeedDeserializeCompletedAsync != null)
-                {
-                    FeedDeserializeCompletedAsync();
-                }
-            }   
-        }
-                        
         private async Task HandleDownloadAsync(DownloadOperation download, bool start)
         {
             try
@@ -443,11 +309,6 @@ namespace ACast
             finally
             {
                 activeDownloads.Remove(download);
-
-                if (DownloadCompletedAsync != null)
-                {
-                    DownloadCompletedAsync();
-                }
             }
         }
 
@@ -484,16 +345,11 @@ namespace ACast
 
             }
 
-            var feedItems = from item in CurrentFeedItems where item.Uri.CompareTo(download.RequestedUri.ToString()) == 0 select item;
+            var feedItems = from item in CurrentFeed.Items where item.Uri.CompareTo(download.RequestedUri.ToString()) == 0 select item;
 
             foreach (var item in feedItems)
             {
                 item.SetProgress(percent);
-            }
-
-            if (DownloadProgressAsync != null)
-            {
-                DownloadProgressAsync(percent);
             }
         }
 
@@ -551,7 +407,21 @@ namespace ACast
         ErrorMessage
     };
 
-    public class Feed 
+    public enum FeedDownloadState
+    {
+        None,
+        DownloadStarted,
+        DownloadCompleted
+    }
+
+    public enum FeedPlayerState
+    {
+        None,
+        PlayerStarted,
+        PlayerCompleted
+    }
+
+    public class Feed : INotifyPropertyChanged
     {
         public Feed()
         {
@@ -562,7 +432,14 @@ namespace ACast
             FileName = string.Empty;
             ImageUri = string.Empty;
             ItemsFilename = string.Empty;
+            MediaDownloadCount = 0;
+            Items = new FeedItems();
         }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        [XmlIgnore]
+        public FeedItems Items;
 
         public string Id;
         public string Title;
@@ -577,28 +454,96 @@ namespace ACast
             get { return LastUpdateDate.ToString("yyyy-MM-ddTHH:mm:ss.fffffffzzz"); }
             set { LastUpdateDate = DateTimeOffset.Parse(value); }
         }
-        [XmlIgnore] 
 
+        [XmlIgnore]
         public DateTimeOffset LastUpdateDate;
+
+        public int MediaDownloadCount;
 
         public override string ToString()
         {
             return Uri;
         }
+
+        public async Task Activate()
+        {
+           await Items.Deserialize(ItemsFilename);
+        }
+
+        public async void Serialize()
+        {
+            await Items.Serialize(ItemsFilename);
+        }
+
+        public async Task Delete()
+        {
+            await Items.Deserialize(ItemsFilename);
+            await Items.DeleteMediaFiles();
+
+            //string path = Path.GetDirectoryName(ItemsFilename);
+            string path = ApplicationData.Current.LocalFolder.Path;
+            StorageFolder folder = await StorageFolder.GetFolderFromPathAsync(path);
+            StorageFile file = await folder.GetFileAsync(ItemsFilename);
+            await file.DeleteAsync(StorageDeleteOption.PermanentDelete);
+        }
     }
 
-    public enum FeedDownloadState
+    public class FeedItems : List<FeedItem>
     {
-        None,
-        DownloadStarted,
-        DownloadCompleted
-    }
+        public async Task Serialize(string fileName)
+        {
+            try
+            {
+                var serializeStream = await ApplicationData.Current.LocalFolder.OpenStreamForWriteAsync(fileName, CreationCollisionOption.ReplaceExisting);
+                XmlSerializer serializer = new XmlSerializer(typeof(FeedItems));
+                serializer.Serialize(serializeStream, this);
+                serializeStream.Flush();
+                serializeStream.Dispose();
+            }
+            catch /*(Exception)*/
+            {
+                //throw;
+            }
+        }
 
-    public enum FeedPlayerState
-    {
-        None,
-        PlayerStarted,
-        PlayerCompleted
+        public async Task Deserialize(string fileName)
+        {
+            try
+            {
+                if (await FileExtensions.FileExist2(ApplicationData.Current.LocalFolder, fileName))
+                {
+                    StorageFile file = await ApplicationData.Current.LocalFolder.GetFileAsync(fileName);
+
+                    var deserializeStream = await file.OpenStreamForReadAsync();
+                    XmlSerializer deserializer = new XmlSerializer(typeof(FeedItems));
+                    FeedItems feedItems = (FeedItems)deserializer.Deserialize(deserializeStream);
+
+                    this.AddRange(feedItems);
+
+                    deserializeStream.Dispose();
+                }
+            }
+            catch /*(Exception)*/
+            {
+                //throw;
+            }
+        }
+
+        public async Task DeleteMediaFiles()
+        {
+            try
+            {
+                foreach (var item in this)
+                {
+                    await item.DeleteMediaFile();
+                }
+            }
+            catch /*(Exception)*/
+            {
+                //throw;
+            }
+        }
+                
     }
 
     public class FeedItem
@@ -653,6 +598,17 @@ namespace ACast
             if (DownloadProgressChanged != null)
             {
                 DownloadProgressChanged(this, progress);
+            }
+        }
+
+        public async Task DeleteMediaFile()
+        {
+            if (!string.IsNullOrEmpty(Path))
+            {
+                StorageFolder folder = await StorageFolder.GetFolderFromPathAsync(Path);
+                StorageFile file = await folder.GetFileAsync(FileName);
+                await file.DeleteAsync(StorageDeleteOption.PermanentDelete);
+                DownloadState = FeedDownloadState.None;
             }
         }
     }

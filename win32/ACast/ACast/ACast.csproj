@@ -97,7 +97,6 @@
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Player.cs" />
-    <Compile Include="UI\PhoneTextBox.cs" />
     <Compile Include="UI\PlayerControl.xaml.cs">
       <DependentUpon>PlayerControl.xaml</DependentUpon>
     </Compile>

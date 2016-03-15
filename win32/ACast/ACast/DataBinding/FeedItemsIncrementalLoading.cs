@@ -16,7 +16,7 @@ namespace ACast.DataBinding
 
         public bool HasMoreItems
         {
-            get { return Count < FeedManager.Instance.CurrentFeedItems.Count; }
+            get { return Count < FeedManager.Instance.CurrentFeed.Items.Count; }
         }
 
         public IAsyncOperation<LoadMoreItemsResult> LoadMoreItemsAsync(uint count)
@@ -29,9 +29,9 @@ namespace ACast.DataBinding
             Task task = Task.Delay(1);
             await task;
 
-            for (int i = 0; i < count && last < FeedManager.Instance.CurrentFeedItems.Count; i++)
+            for (int i = 0; i < count && last < FeedManager.Instance.CurrentFeed.Items.Count; i++)
             {
-                Add(new FeedDetailsListViewItem(FeedManager.Instance.CurrentFeedItems[last]));
+                Add(new FeedDetailsListViewItem(FeedManager.Instance.CurrentFeed.Items[last]));
                 last++;
             }
 
