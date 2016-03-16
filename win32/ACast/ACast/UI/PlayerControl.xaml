@@ -27,11 +27,9 @@
         <AppBarButton x:Name="sleepTimerButton" HorizontalAlignment="Stretch" Icon="Clock" Label="appbarbutton" VerticalAlignment="Top" IsCompact="True"  Grid.Column="3" Grid.Row="2" Height="54" Margin="13,0.125,13,0">
             <AppBarButton.Flyout>
                 <MenuFlyout x:Name="sleepTimerFlyout">
-                    <local:SleepTimerItem Text="3 s" DurationMs="3000"/>
-                    <local:SleepTimerItem Text="5 min" DurationMs="300000"/>
-                    <local:SleepTimerItem Text="15 min" DurationMs="900000"/>
-                    <local:SleepTimerItem Text="30 min" DurationMs="18000000"/>
-                    <local:SleepTimerItem Text="60 min" DurationMs="36000000"/>
+                    <local:SleepTimerItem Text="15 min" Duration="15"/>
+                    <local:SleepTimerItem Text="30 min" Duration="30"/>
+                    <local:SleepTimerItem Text="60 min" Duration="60"/>
                 </MenuFlyout>
             </AppBarButton.Flyout>
         </AppBarButton>

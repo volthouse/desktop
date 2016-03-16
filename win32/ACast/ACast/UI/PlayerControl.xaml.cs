@@ -47,12 +47,20 @@ namespace ACast
             player_StateChanged(null, Player.Instance.State);
         }
 
-        private void sleepItemClick(object sender, RoutedEventArgs e)
+        private async void sleepItemClick(object sender, RoutedEventArgs e)
         {
             SleepTimerItem item = sender as SleepTimerItem;
             if(item != null)
             {
-                Player.Instance.SetSleepTimer(item.DurationMs);
+                //Player.Instance.SetSleepTimer(item.DurationMs);
+                var y = await Windows.ApplicationModel.Background.BackgroundExecutionManager.RequestAccessAsync();
+
+                var builder = new Windows.ApplicationModel.Background.BackgroundTaskBuilder();
+
+                builder.Name = "TimerTask";
+                builder.TaskEntryPoint = "ACastBackgroundAudioTask.MyBackgroundTimerTask";
+                builder.SetTrigger(new Windows.ApplicationModel.Background.TimeTrigger((uint)item.Duration, false));
+                var ret = builder.Register();
             }
         }
 
@@ -152,6 +160,6 @@ namespace ACast
         public SleepTimerItem() { 
         }
 
-        public int DurationMs { get; set; }
+        public int Duration { get; set; }
     }
 }

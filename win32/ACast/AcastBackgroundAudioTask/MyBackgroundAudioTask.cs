@@ -57,9 +57,6 @@ namespace ACastBackgroundAudioTask
         private ManualResetEvent backgroundTaskStarted = new ManualResetEvent(false);
         private MediaPlaybackItem currentPlaybackItem;
 
-        private int sleepTimerDurationMs = 0;
-        private ThreadPoolTimer periodicTimer = null;
-        private IBackgroundTaskInstance taskInstance = null;
         #endregion
 
         #region Helper methods
@@ -95,8 +92,6 @@ namespace ACastBackgroundAudioTask
             //
             // The UI for the UVC must update even when the foreground process has been terminated
             // and therefore the SMTC is configured and updated from the background task.
-
-            this.taskInstance = taskInstance;
 
             smtc = SystemMediaTransportControls.GetForCurrentView();
             smtc.ButtonPressed += smtc_ButtonPressed;
@@ -384,22 +379,15 @@ namespace ACastBackgroundAudioTask
                 MessageService.SendMessageToForeground(new BackgroundServiceIsAlive());
             }
 
-            SetSleepTimerMessage setSleepTimerMessage;
-            if (MessageService.TryParseMessage(e.Data, out setSleepTimerMessage))
-            {
-                sleepTimerDurationMs = setSleepTimerMessage.DurationMs;
-                if (periodicTimer != null)
-                {
-                    periodicTimer.Cancel();
-                }
-                periodicTimer = ThreadPoolTimer.CreatePeriodicTimer(
-                    new TimerElapsedHandler(periodicTimerCallback), TimeSpan.FromSeconds(1)
-                );
-                ApplicationSettingsHelper.SaveSettingsValue(
-                    ApplicationSettingsConstants.SleepTimerStarted,
-                    DateTime.Now.ToString()
-                );
-            }
+            //SetSleepTimerMessage setSleepTimerMessage;
+            //if (MessageService.TryParseMessage(e.Data, out setSleepTimerMessage))
+            //{
+                
+            //    ApplicationSettingsHelper.SaveSettingsValue(
+            //        ApplicationSettingsConstants.SleepTimerStarted,
+            //        DateTime.Now.ToString()
+            //    );
+            //}
         }
 
         private void StartPlayback(StartTrackMessage startTrackMessage)
@@ -410,34 +398,5 @@ namespace ACastBackgroundAudioTask
             BackgroundMediaPlayer.Current.Play();
         }
         #endregion
-
-
-        private void periodicTimerCallback(ThreadPoolTimer timer)
-        {
-            if (taskInstance != null)
-            {
-                deferral = taskInstance.GetDeferral();
-            }            
-
-            if (sleepTimerDurationMs > 0)
-            {
-                sleepTimerDurationMs -= (int)timer.Period.TotalMilliseconds;
-            }
-            else
-            {
-                sleepTimerDurationMs = 0;
-
-                ApplicationSettingsHelper.SaveSettingsValue(
-                    ApplicationSettingsConstants.SleepTimerStopped,
-                    DateTime.Now.ToString()
-                );
-                
-                BackgroundMediaPlayer.Current.Pause();
-                
-                periodicTimer.Cancel();                
-            }
-        }
     }
-
-    
 }
