@@ -37,7 +37,7 @@ namespace ACastShared
             else
             {
                 var value = ApplicationData.Current.LocalSettings.Values[key];
-                ApplicationData.Current.LocalSettings.Values.Remove(key);
+                //ApplicationData.Current.LocalSettings.Values.Remove(key);
                 Debug.WriteLine("value found " + value.ToString());
                 return value;
             }
@@ -60,6 +60,39 @@ namespace ACastShared
             }
 
         }
+
+//using System;
+//using System.IO;
+//using System.Collections.Generic;
+//using System.Diagnostics;
+//using System.Linq;
+//using System.Text;
+//using System.Threading.Tasks;
+//using System.Xml.Serialization;
+//using Windows.Storage;
+//        public static async Task<object> ReadResetSettingsValueEx(string key)
+//        {
+//            StorageFile file = await ApplicationData.Current.LocalFolder.GetFileAsync("Settings.dat");
+
+//            var deserializeStream = await file.OpenStreamForReadAsync();
+//            XmlSerializer deserializer = new XmlSerializer(typeof(Dictionary<string, object>));
+//            Dictionary<string, object> settings = (Dictionary<string, object>)deserializer.Deserialize(deserializeStream);
+//            deserializeStream.Dispose();
+
+
+//            Debug.WriteLine(key);
+//            if (!settings.ContainsKey(key))
+//            {
+//                Debug.WriteLine("null returned");
+//                return null;
+//            }
+//            else
+//            {
+//                var value = settings[key];
+//                Debug.WriteLine("value found " + value.ToString());
+//                return value;
+//            }
+//        }
 
     }
 }

@@ -25,7 +25,7 @@ namespace ACast
         private SynchronizationContext context;
         private int currentFeedIdx = 0;
 
-        private SearchFeedButton searchFeedDetailsButton;
+        private SearchFeedButton searchButton;
         private AddFeedButton addFeedButton;
         private RefreshFeedButton refreshButton;
         private RemoveFeedButton removeButton;
@@ -56,81 +56,29 @@ namespace ACast
             refreshButton.Click += refreshButton_Click;
 
             removeButton = new RemoveFeedButton();
-            removeButton.Click += cleanAllButton_Click;
+            removeButton.Click += removeButton_Click;
 
             selectButton = new SelectButton();
             selectButton.Click += selectButton_Click;
 
             cancelButton = new CancelButton();
             cancelButton.Click += cancelButton_Click;
-            searchFeedDetailsButton = new SearchFeedButton(serachFeedDetailsBox);
-            searchFeedDetailsButton.SearchChanged += searchFeedDetailsButton_SearchChanged;
-            searchFeedDetailsButton.SearchCanceled += searchFeedDetailsButton_SearchCanceled;
+
+            searchButton = new SearchFeedButton(serachFeedDetailsBox);
+            searchButton.Click += searchButton_Click;
+            searchButton.SearchChanged += searchFeedDetailsButton_SearchChanged;
 
             serachFeedDetailsBox.Visibility = Visibility.Collapsed;
 
             feedItemsListView.ItemClick += feedItemsListView_ItemClick;
 
             FeedManager.Instance.DeserializeFeedsAsync(feedListLoadedAsync);            
-        }
-
-        void feedItemsListView_ItemClick(object sender, ItemClickEventArgs e)
-        {
-            feedItemsListView.SelectedItems.Add(e.ClickedItem);
-        }
-
-        void cancelButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (pivot.SelectedItem.Equals(feedDetailsPivotItem))
-            {
-                if (feedItemsListView.SelectionMode != ListViewSelectionMode.None)                
-                {
-                    feedItemsListView.SelectionMode = ListViewSelectionMode.Single;
-                    this.commandBar.PrimaryCommands.Clear();
-                    this.commandBar.PrimaryCommands.Add(refreshButton);
-                    this.commandBar.PrimaryCommands.Add(selectButton);
-                    this.commandBar.PrimaryCommands.Add(searchFeedDetailsButton);
-                    this.commandBar.Visibility = Visibility.Visible;
-                }
-            }
-        }
+        }        
 
         public void Play(FeedItem feedItem)
         {
             pivot.SelectedItem = playerPivotItem;
             playerControl.Play(feedItem);
-        }
-
-        void selectButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (pivot.SelectedItem.Equals(feedDetailsPivotItem))
-            {
-                if (feedItemsListView.SelectionMode == ListViewSelectionMode.Single)
-                {
-                    //if (feedItemsListView.SelectedItems.Count > 0)
-                    //    feedItemsListView.SelectedItems.Clear();
-                    feedItemsListView.SelectionMode = ListViewSelectionMode.Multiple;
-                    this.commandBar.PrimaryCommands.Clear();
-                    this.commandBar.PrimaryCommands.Add(cancelButton);
-                    this.commandBar.PrimaryCommands.Add(removeButton);
-                }               
-            }
-        }
-
-        void searchFeedDetailsButton_SearchCanceled(object sender, EventArgs e)
-        {
-            updateFeedItemsListView(null); ;
-        }
-
-        void searchFeedDetailsButton_SearchChanged(object sender, IList<FeedItem> e)
-        {
-            List<FeedDetailsListViewItem> items = new List<FeedDetailsListViewItem>();
- 	        foreach (var item in e)
-	        {
-		        items.Add(new FeedDetailsListViewItem(item));
-	        }
-
-            feedItemsListView.ItemsSource = items;
         }
 
         /// <summary>
@@ -150,13 +98,39 @@ namespace ACast
 
             Application.Current.Suspending += app_Suspending;
             Application.Current.Resuming += app_Resuming;
-
+#if true
             var currentTrackId = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.TrackId);
             var currentTrackPosition = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.Position);
             if (currentTrackId != null)
-                DebugService.Add(currentTrackId.ToString());
+                DebugService.Add("Track" + currentTrackId.ToString());
             if (currentTrackPosition != null)
-                DebugService.Add(currentTrackPosition.ToString());
+                DebugService.Add("Trackpos:" + currentTrackPosition.ToString());
+
+            var timerStarted = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.SleepTimerStarted);
+            var timerStopped = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.SleepTimerStopped);
+            if(timerStarted != null)
+                DebugService.Add("Timer start:" + timerStarted.ToString());
+            if(timerStopped != null)
+                DebugService.Add("Timer stopp:" + timerStopped.ToString());
+
+#endif
+
+        }
+
+        void feedItemsListView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            feedItemsListView.SelectedItems.Add(e.ClickedItem);
+        }
+
+        void searchFeedDetailsButton_SearchChanged(object sender, IList<FeedItem> e)
+        {
+            List<FeedDetailsListViewItem> items = new List<FeedDetailsListViewItem>();
+ 	        foreach (var item in e)
+	        {
+		        items.Add(new FeedDetailsListViewItem(item));
+	        }
+
+            feedItemsListView.ItemsSource = items;
         }
 
         private void app_Resuming(object sender, object e)
@@ -184,7 +158,7 @@ namespace ACast
                 this.commandBar.PrimaryCommands.Clear();
                 this.commandBar.PrimaryCommands.Add(refreshButton);
                 this.commandBar.PrimaryCommands.Add(selectButton);
-                this.commandBar.PrimaryCommands.Add(searchFeedDetailsButton);
+                this.commandBar.PrimaryCommands.Add(searchButton);
                 this.commandBar.Visibility = Visibility.Visible;
             }
             else if (args.Item.Equals(playerPivotItem))
@@ -203,6 +177,85 @@ namespace ACast
                 {
                     debugList.Items.Add(item);
                 }
+            }
+        }
+
+        void searchButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (pivot.SelectedItem.Equals(feedDetailsPivotItem))
+            {
+                feedItemsListView.SelectionMode = ListViewSelectionMode.Single;
+                this.commandBar.PrimaryCommands.Clear();
+                this.commandBar.PrimaryCommands.Add(selectButton);
+                this.commandBar.PrimaryCommands.Add(cancelButton);
+                this.commandBar.Visibility = Visibility.Visible;
+
+                searchButton.Active = true;
+            }
+        }
+
+        void cancelButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (pivot.SelectedItem.Equals(feedDetailsPivotItem))
+            {
+                if (feedItemsListView.SelectionMode == ListViewSelectionMode.Single)                
+                {
+                    if (searchButton.Active)
+                    {
+                        this.commandBar.PrimaryCommands.Clear();
+                        this.commandBar.PrimaryCommands.Add(refreshButton);
+                        this.commandBar.PrimaryCommands.Add(selectButton);
+                        this.commandBar.PrimaryCommands.Add(searchButton);
+                        this.commandBar.Visibility = Visibility.Visible;
+
+                        searchButton.Active = false;
+                    }
+                    else
+                    {
+                        this.commandBar.PrimaryCommands.Clear();
+                        this.commandBar.PrimaryCommands.Add(refreshButton);
+                        this.commandBar.PrimaryCommands.Add(selectButton);
+                        this.commandBar.PrimaryCommands.Add(searchButton);
+                        this.commandBar.Visibility = Visibility.Visible;
+                    }
+                }
+                else
+                {
+                    if (searchButton.Active)
+                    {
+                        this.commandBar.PrimaryCommands.Clear();
+                        this.commandBar.PrimaryCommands.Add(selectButton);
+                        this.commandBar.PrimaryCommands.Add(cancelButton);
+                        this.commandBar.Visibility = Visibility.Visible;
+
+                    }
+                    else
+                    {
+                        this.commandBar.PrimaryCommands.Clear();
+                        this.commandBar.PrimaryCommands.Add(refreshButton);
+                        this.commandBar.PrimaryCommands.Add(selectButton);
+                        this.commandBar.PrimaryCommands.Add(searchButton);
+                        this.commandBar.Visibility = Visibility.Visible;
+                    }
+
+                    feedItemsListView.SelectionMode = ListViewSelectionMode.Single;
+                }
+            }
+        }
+
+        void selectButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (pivot.SelectedItem.Equals(feedDetailsPivotItem))
+            {
+                if (feedItemsListView.SelectionMode == ListViewSelectionMode.Single)
+                {
+                    //if (feedItemsListView.SelectedItems.Count > 0)
+                    //    feedItemsListView.SelectedItems.Clear();
+                    feedItemsListView.SelectionMode = ListViewSelectionMode.Multiple;
+                    this.commandBar.PrimaryCommands.Clear();
+                    this.commandBar.PrimaryCommands.Add(removeButton);
+                    this.commandBar.PrimaryCommands.Add(cancelButton);
+                }               
             }
         }
 
@@ -226,7 +279,7 @@ namespace ACast
             }
         }
 
-        async void cleanAllButton_Click(object sender, RoutedEventArgs e)
+        async void removeButton_Click(object sender, RoutedEventArgs e)
         {
             if (pivot.SelectedItem.Equals(feedsPivotItem))
             {
@@ -241,11 +294,23 @@ namespace ACast
             }
             else if (pivot.SelectedItem.Equals(feedDetailsPivotItem))
             {
-                foreach (var item in feedItemsListView.SelectedItems.Cast <FeedDetailsListViewItem>())
+                if (feedItemsListView.SelectedItems.Count > 0)
                 {
-                    await item.FeedItem.DeleteMediaFile();
+                    foreach (var item in feedItemsListView.SelectedItems.Cast <FeedDetailsListViewItem>())
+                    {
+                        await item.FeedItem.DeleteMediaFile();
+                    }
+                    FeedManager.Instance.CurrentFeed.Serialize();
+
+                    feedItemsListView.SelectedItems.Clear();
+                    feedItemsListView.SelectionMode = ListViewSelectionMode.Single;
+
+                    this.commandBar.PrimaryCommands.Clear();
+                    this.commandBar.PrimaryCommands.Add(refreshButton);
+                    this.commandBar.PrimaryCommands.Add(selectButton);
+                    this.commandBar.PrimaryCommands.Add(searchButton);
+                    this.commandBar.Visibility = Visibility.Visible;
                 }
-                FeedManager.Instance.CurrentFeed.Serialize();
             }
         }
 
@@ -332,7 +397,7 @@ namespace ACast
     {
         public RemoveFeedButton()
         {
-            Icon = new SymbolIcon(Symbol.Remove);
+            Icon = new SymbolIcon(Symbol.Delete);
         }
     }
 
@@ -360,21 +425,25 @@ namespace ACast
         }
     }
 
+    public class SearchButton : AppBarButton
+    {
+        public SearchButton()
+        {
+            Icon = new SymbolIcon(Symbol.Zoom);
+        }
+    }
+
     public class SearchFeedButton : AppBarButton
     {
         private AutoSuggestBox textBox;
 
         public event EventHandler<IList<FeedItem>> SearchChanged;
 
-        public event EventHandler SearchCanceled;
-
         public SearchFeedButton(AutoSuggestBox textBox)
         {
             this.textBox = textBox;
             this.textBox.KeyDown += textBox_KeyDown;
-            //this.textBox.
             Icon = new SymbolIcon(Symbol.Zoom);
-            this.Click += SearchFeedButton_Click;
         }
 
         //void textBox_GotFocus(object sender, RoutedEventArgs e)
@@ -382,28 +451,9 @@ namespace ACast
         //    Windows.UI.ViewManagement.InputPane.GetForCurrentView().TryShow();
         //}
 
-        private void SearchFeedButton_Click(object sender, RoutedEventArgs e)
-        {
-            switch (textBox.Visibility)
-            {
-                case Visibility.Collapsed:
-                    Icon = new SymbolIcon(Symbol.Cancel);
-                    textBox.Visibility = Visibility.Visible;
-                    //Windows.UI.Xaml.Input.FocusManager.
-                    
-                       
-                    break;
-                case Visibility.Visible:
-                    Icon = new SymbolIcon(Symbol.Zoom);
-                    textBox.Visibility = Visibility.Collapsed;
-                    if (SearchCanceled != null)
-                    {
-                        SearchCanceled(this, EventArgs.Empty);
-                    }
-                    break;
-                default:
-                    break;
-            }
+        public bool Active {
+            get { return textBox.Visibility == Visibility.Visible; }
+            set { textBox.Visibility = value ? Visibility.Visible : Visibility.Collapsed; }
         }
 
         private void textBox_KeyDown(object sender, Windows.UI.Xaml.Input.KeyRoutedEventArgs e)

@@ -23,6 +23,7 @@ using ACastShared;
 using Windows.Foundation;
 using ACastShared.Messages;
 using Windows.Storage.Streams;
+using Windows.System.Threading;
 
 /* This background task will start running the first time the
  * MediaPlayer singleton instance is accessed from foreground. When a new audio 
@@ -55,7 +56,10 @@ namespace ACastBackgroundAudioTask
         //private AppState foregroundAppState = AppState.Unknown;
         private ManualResetEvent backgroundTaskStarted = new ManualResetEvent(false);
         private MediaPlaybackItem currentPlaybackItem;
-        private Timer sleepTimer;
+
+        private int sleepTimerDurationMs = 0;
+        private ThreadPoolTimer periodicTimer = null;
+        private IBackgroundTaskInstance taskInstance = null;
         #endregion
 
         #region Helper methods
@@ -92,7 +96,8 @@ namespace ACastBackgroundAudioTask
             // The UI for the UVC must update even when the foreground process has been terminated
             // and therefore the SMTC is configured and updated from the background task.
 
-            //smtc = BackgroundMediaPlayer.Current.SystemMediaTransportControls;
+            this.taskInstance = taskInstance;
+
             smtc = SystemMediaTransportControls.GetForCurrentView();
             smtc.ButtonPressed += smtc_ButtonPressed;
             smtc.PropertyChanged += smtc_PropertyChanged;
@@ -151,16 +156,18 @@ namespace ACastBackgroundAudioTask
             // You get some time here to save your state before process and resources are reclaimed
             Debug.WriteLine("MyBackgroundAudioTask " + sender.Task.TaskId + " Cancel Requested...");
             try
-            {
+            {                
                 // immediately set not running
                 backgroundTaskStarted.Reset();
 
                 // save state
                 ApplicationSettingsHelper.SaveSettingsValue(
-                    ApplicationSettingsConstants.TrackId, GetCurrentTrackId() == null ? null : GetCurrentTrackId().ToString()
+                    ApplicationSettingsConstants.TrackId,
+                    GetCurrentTrackId() == null ? null : GetCurrentTrackId().ToString()
                 );
                 ApplicationSettingsHelper.SaveSettingsValue(
-                    ApplicationSettingsConstants.Position, BackgroundMediaPlayer.Current.Position.ToString()
+                    ApplicationSettingsConstants.Position,
+                    BackgroundMediaPlayer.Current.Position.ToString()
                 );
                 //ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.BackgroundTaskState, BackgroundTaskState.Canceled.ToString());
                 //ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.AppState, Enum.GetName(typeof(AppState), foregroundAppState));
@@ -176,6 +183,7 @@ namespace ACastBackgroundAudioTask
             {
                 Debug.WriteLine(ex.ToString());
             }
+
             deferral.Complete(); // signals task completion. 
             Debug.WriteLine("MyBackgroundAudioTask Cancel complete...");
         }
@@ -379,7 +387,18 @@ namespace ACastBackgroundAudioTask
             SetSleepTimerMessage setSleepTimerMessage;
             if (MessageService.TryParseMessage(e.Data, out setSleepTimerMessage))
             {
-                sleepTimer = new Timer(sleepTimerCallback, null, setSleepTimerMessage.DurationMs, 0);
+                sleepTimerDurationMs = setSleepTimerMessage.DurationMs;
+                if (periodicTimer != null)
+                {
+                    periodicTimer.Cancel();
+                }
+                periodicTimer = ThreadPoolTimer.CreatePeriodicTimer(
+                    new TimerElapsedHandler(periodicTimerCallback), TimeSpan.FromSeconds(1)
+                );
+                ApplicationSettingsHelper.SaveSettingsValue(
+                    ApplicationSettingsConstants.SleepTimerStarted,
+                    DateTime.Now.ToString()
+                );
             }
         }
 
@@ -392,9 +411,31 @@ namespace ACastBackgroundAudioTask
         }
         #endregion
 
-        void sleepTimerCallback(object state)
+
+        private void periodicTimerCallback(ThreadPoolTimer timer)
         {
-            BackgroundMediaPlayer.Current.Pause();
+            if (taskInstance != null)
+            {
+                deferral = taskInstance.GetDeferral();
+            }            
+
+            if (sleepTimerDurationMs > 0)
+            {
+                sleepTimerDurationMs -= (int)timer.Period.TotalMilliseconds;
+            }
+            else
+            {
+                sleepTimerDurationMs = 0;
+
+                ApplicationSettingsHelper.SaveSettingsValue(
+                    ApplicationSettingsConstants.SleepTimerStopped,
+                    DateTime.Now.ToString()
+                );
+                
+                BackgroundMediaPlayer.Current.Pause();
+                
+                periodicTimer.Cancel();                
+            }
         }
     }
 
