@@ -11,10 +11,10 @@ namespace ACastShared.Messages
     public class SetSleepTimerMessage
     {
         [DataMember]
-        public int DurationMs;
+        public int DurationMin;
 
-        public SetSleepTimerMessage(int durationMs) {
-            this.DurationMs = durationMs;
+        public SetSleepTimerMessage(int durationMin) {
+            this.DurationMin = durationMin;
         }
     }
 }

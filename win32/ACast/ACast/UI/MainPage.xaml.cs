@@ -100,6 +100,8 @@ namespace ACast
             Application.Current.Suspending += app_Suspending;
             Application.Current.Resuming += app_Resuming;
 #if true
+            DebugService.Add("OnNavigatedTo");
+
             var currentTrackId = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.TrackId);
             var currentTrackPosition = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.Position);
             if (currentTrackId != null)
@@ -107,14 +109,16 @@ namespace ACast
             if (currentTrackPosition != null)
                 DebugService.Add("Trackpos:" + currentTrackPosition.ToString());
 
-            var timerStarted = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.SleepTimerStarted);
-            var timerStopped = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.SleepTimerStopped);
-            if(timerStarted != null)
-                DebugService.Add("Timer start:" + timerStarted.ToString());
-            if(timerStopped != null)
-                DebugService.Add("Timer stopp:" + timerStopped.ToString());
+            //var timerStarted = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.SleepTimerStarted);
+            //var timerStopped = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.SleepTimerStopped);
+            //if(timerStarted != null)
+            //    DebugService.Add("Timer start:" + timerStarted.ToString(), false);
+            //if (timerStopped != null)
+            //    DebugService.Add("Timer stopp:" + timerStopped.ToString(), false);
 
-#endif            
+            DebugService.Instance.Serialize();
+
+#endif           
         }
 
         void feedItemsListView_ItemClick(object sender, ItemClickEventArgs e)
@@ -171,7 +175,10 @@ namespace ACast
             {
                 this.commandBar.PrimaryCommands.Clear();
                 this.commandBar.PrimaryCommands.Add(refreshButton);
+                this.commandBar.PrimaryCommands.Add(removeButton);
+                this.commandBar.Visibility = Visibility.Visible;
 
+                DebugService.Instance.Deserialize();
                 debugList.Items.Clear();
                 foreach (var item in DebugService.Instance.DebugMessages)
                 {
@@ -296,7 +303,7 @@ namespace ACast
             {
                 if (feedItemsListView.SelectedItems.Count > 0)
                 {
-                    foreach (var item in feedItemsListView.SelectedItems.Cast <FeedDetailsListViewItem>())
+                    foreach (var item in feedItemsListView.SelectedItems.Cast<FeedDetailsListViewItem>())
                     {
                         await item.FeedItem.DeleteMediaFile();
                     }
@@ -311,6 +318,11 @@ namespace ACast
                     this.commandBar.PrimaryCommands.Add(searchButton);
                     this.commandBar.Visibility = Visibility.Visible;
                 }
+            }
+            else if (pivot.SelectedItem.Equals(debugPivotItem))
+            {
+                DebugService.Clear();
+                debugList.Items.Clear();
             }
         }
 
@@ -488,8 +500,8 @@ namespace ACast
 
     class BackgroundTaskSample
     {
-        public const string SampleBackgroundTaskEntryPoint = "ACastBackgroundAudioTask.MyBackgroundTimerTask";
-        public const string SampleBackgroundTaskName = "MyBackgroundTimerTask";
+        public const string SampleBackgroundTaskEntryPoint = "ACastBackgroundTimerTask.BackgroundTimerTask";
+        public const string SampleBackgroundTaskName = "BackgroundTimerTask";
         public static string SampleBackgroundTaskProgress = "";
         public static bool SampleBackgroundTaskRegistered = false;
 

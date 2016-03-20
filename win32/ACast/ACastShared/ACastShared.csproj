@@ -87,6 +87,7 @@
     <Compile Include="AppState.cs" />
     <Compile Include="BackgroundTaskState.cs" />
     <Compile Include="EnumHelper.cs" />
+    <Compile Include="FileExtensions.cs" />
     <Compile Include="JsonHelper.cs" />
     <Compile Include="MediaPlaybackItem.cs" />
     <Compile Include="Messages\AppResumedMessage.cs" />

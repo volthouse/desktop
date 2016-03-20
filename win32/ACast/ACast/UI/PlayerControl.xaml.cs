@@ -1,5 +1,7 @@
-﻿using System;
+﻿using ACastShared;
+using System;
 using System.Threading;
+using Windows.ApplicationModel.Background;
 using Windows.Data.Html;
 using Windows.Media;
 using Windows.Media.Playback;
@@ -52,15 +54,14 @@ namespace ACast
             SleepTimerItem item = sender as SleepTimerItem;
             if(item != null)
             {
-                //Player.Instance.SetSleepTimer(item.DurationMs);
-                var y = await Windows.ApplicationModel.Background.BackgroundExecutionManager.RequestAccessAsync();
+                Player.Instance.SetSleepTimer(item.Duration);
 
-                var builder = new Windows.ApplicationModel.Background.BackgroundTaskBuilder();
-
-                builder.Name = "TimerTask";
-                builder.TaskEntryPoint = "ACastBackgroundAudioTask.MyBackgroundTimerTask";
-                builder.SetTrigger(new Windows.ApplicationModel.Background.TimeTrigger((uint)item.Duration, false));
-                var ret = builder.Register();
+                //DebugService.Add("Start Background Timer");
+                //var task = BackgroundTaskSample.RegisterBackgroundTask(BackgroundTaskSample.SampleBackgroundTaskEntryPoint,
+                //                                                   BackgroundTaskSample.TimeTriggeredTaskName,
+                //                                                   new TimeTrigger(30, true),
+                //                                                   null);
+                //await task;
             }
         }
 

@@ -86,6 +86,7 @@ namespace ACastBackgroundAudioTask
         public void Run(IBackgroundTaskInstance taskInstance)
         {
             Debug.WriteLine("Background Audio Task " + taskInstance.Task.Name + " starting...");
+            DebugService.Add("Background Audio Task " + taskInstance.Task.Name + " starting...");
 
             // Initialize SystemMediaTransportControls (SMTC) for integration with
             // the Universal Volume Control (UVC).
@@ -111,7 +112,6 @@ namespace ACastBackgroundAudioTask
 
             // Add handlers for MediaPlayer
             BackgroundMediaPlayer.Current.CurrentStateChanged += Current_CurrentStateChanged;
-
             // Initialize message channel 
             BackgroundMediaPlayer.MessageReceivedFromForeground += BackgroundMediaPlayer_MessageReceivedFromForeground;
 
@@ -150,8 +150,9 @@ namespace ACastBackgroundAudioTask
         {
             // You get some time here to save your state before process and resources are reclaimed
             Debug.WriteLine("MyBackgroundAudioTask " + sender.Task.TaskId + " Cancel Requested...");
+            DebugService.Add("MyBackgroundAudioTask " + sender.Task.TaskId + " Cancel Requested...");
             try
-            {                
+            {
                 // immediately set not running
                 backgroundTaskStarted.Reset();
 
@@ -359,6 +360,8 @@ namespace ACastBackgroundAudioTask
                 currentPlaybackItem = MediaPlaybackItem.Create(startTrackMessage.TrackId);
                 playbackCurrentItemChanged(currentPlaybackItem);
                 currentPlaybackItem.Play();
+
+               
             }
 
             ResumePlaybackMessage resumePlaybackMessage;
@@ -379,15 +382,33 @@ namespace ACastBackgroundAudioTask
                 MessageService.SendMessageToForeground(new BackgroundServiceIsAlive());
             }
 
-            //SetSleepTimerMessage setSleepTimerMessage;
-            //if (MessageService.TryParseMessage(e.Data, out setSleepTimerMessage))
-            //{
-                
-            //    ApplicationSettingsHelper.SaveSettingsValue(
-            //        ApplicationSettingsConstants.SleepTimerStarted,
-            //        DateTime.Now.ToString()
-            //    );
-            //}
+            SetSleepTimerMessage setSleepTimerMessage;
+            if (MessageService.TryParseMessage(e.Data, out setSleepTimerMessage))
+            {
+
+                //ApplicationSettingsHelper.SaveSettingsValue(
+                //    ApplicationSettingsConstants.SleepTimerStarted,
+                //    DateTime.Now.ToString()
+                //);
+
+                DebugService.Add("Set Timer" + setSleepTimerMessage.DurationMin.ToString());
+
+                ThreadPoolTimer DelayTimer = ThreadPoolTimer.CreateTimer(
+                    (timer) =>
+                    {
+                        BackgroundMediaPlayer.Current.Pause();
+                        ApplicationSettingsHelper.SaveSettingsValue(
+                            ApplicationSettingsConstants.SleepTimerStopped,
+                            DateTime.Now.ToString()
+                        );
+                        ApplicationSettingsHelper.SaveSettingsValue(
+                            ApplicationSettingsConstants.Position,
+                            BackgroundMediaPlayer.Current.Position.ToString()
+                        );
+                    },
+                    TimeSpan.FromMinutes(setSleepTimerMessage.DurationMin)
+                );
+            }
         }
 
         private void StartPlayback(StartTrackMessage startTrackMessage)

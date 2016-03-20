@@ -148,12 +148,12 @@ namespace ACast
             }
         }
 
-        public void SetSleepTimer(int durationMs)
+        public void SetSleepTimer(int durationMin)
         {
-            if (isBackgroundTaskRunning)
-            {
-                MessageService.SendMessageToBackground(new SetSleepTimerMessage(durationMs));
-            }
+            //if (isBackgroundTaskRunning)
+            //{
+                MessageService.SendMessageToBackground(new SetSleepTimerMessage(durationMin));
+            //}
         }
 
         void backgroundMediaPlayer_MessageReceivedFromBackground(object sender, MediaPlayerDataReceivedEventArgs e)
