@@ -302,10 +302,15 @@ namespace ACastBackgroundAudioTask
             // Update the system view
             UpdateUVCOnNewTrack(item);
 
-            //if (foregroundAppState == AppState.Active)
-                MessageService.SendMessageToForeground(new TrackChangedMessage(item.Source));
-            //else
-            //    ApplicationSettingsHelper.SaveSettingsValue(TrackIdKey, currentTrackId == null ? null : currentTrackId.ToString());
+            ApplicationSettingsHelper.SaveSettingsValue(
+                ApplicationSettingsConstants.TrackId, item.Source.ToString()
+            );
+
+            ApplicationSettingsHelper.SaveSettingsValue(
+                ApplicationSettingsConstants.Position, TimeSpan.Zero.ToString()
+            );
+
+            MessageService.SendMessageToForeground(new TrackChangedMessage(item.Source));
         }
 
         #endregion
@@ -401,6 +406,7 @@ namespace ACastBackgroundAudioTask
                             ApplicationSettingsConstants.SleepTimerStopped,
                             DateTime.Now.ToString()
                         );
+                        
                         ApplicationSettingsHelper.SaveSettingsValue(
                             ApplicationSettingsConstants.Position,
                             BackgroundMediaPlayer.Current.Position.ToString()
@@ -411,13 +417,6 @@ namespace ACastBackgroundAudioTask
             }
         }
 
-        private void StartPlayback(StartTrackMessage startTrackMessage)
-        {
-            playbackCurrentItemChanged(currentPlaybackItem);
-
-            BackgroundMediaPlayer.Current.SetUriSource(startTrackMessage.TrackId);
-            BackgroundMediaPlayer.Current.Play();
-        }
         #endregion
     }
 }

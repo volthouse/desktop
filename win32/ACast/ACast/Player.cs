@@ -158,16 +158,7 @@ namespace ACast
 
         void backgroundMediaPlayer_MessageReceivedFromBackground(object sender, MediaPlayerDataReceivedEventArgs e)
         {
-
-            ValueSet valueSet = e.Data;
-            string s = "";
-
-            foreach (var item in valueSet.Values)
-            {
-                s += item.ToString();
-            }
-
-            DebugService.Add("Player: MessageReceivedFromBackground:\r\n" + s);
+            DebugService.Add("Player: MessageReceivedFromBackground");
 
             BackgroundServiceIsAlive backgroundServiceIsAlive;
             if (MessageService.TryParseMessage(e.Data, out backgroundServiceIsAlive))
