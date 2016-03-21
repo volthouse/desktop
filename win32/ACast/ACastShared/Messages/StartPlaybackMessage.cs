@@ -46,12 +46,18 @@ namespace ACastShared.Messages
         {
         }
 
-        public StartTrackMessage(Uri trackId)
+        public StartTrackMessage(Uri trackId, string title, TimeSpan position)
         {
             this.TrackId = trackId;
+            this.Title = title;
+            this.Position = position;
         }
 
         [DataMember]
         public Uri TrackId;
+        [DataMember]
+        public string Title;
+        [DataMember]
+        public TimeSpan Position;
     }
 }

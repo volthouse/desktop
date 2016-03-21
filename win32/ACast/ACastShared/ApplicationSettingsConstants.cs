@@ -23,6 +23,7 @@ namespace ACastShared
     {
         // Data keys
         public const string TrackId = "trackid";
+        public const string TrackTitle = "tracktitle";
         public const string Position = "position";
         public const string BackgroundTaskState = "backgroundtaskstate"; // Started, Running, Cancelled
         public const string AppState = "appstate"; // Suspended, Resumed
@@ -30,5 +31,7 @@ namespace ACastShared
         public const string AppResumedTimestamp = "appresumedtimestamp";
         public const string SleepTimerStarted = "sleeptimerstarted";
         public const string SleepTimerStopped = "sleeptimerstopped";
+        public const string LastFeedId = "lastfeedid";
+        public const string LastFeedItemId = "lastfeeditemid";
     }
 }

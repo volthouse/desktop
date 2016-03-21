@@ -43,6 +43,17 @@ namespace ACastShared
             }
         }
 
+        public static T ReadSettingsValue<T>(string key)
+        {
+            var value = ReadResetSettingsValue(key);
+            if (value != null)
+            {
+                return (T)value;
+            }
+
+            return default(T);
+        }
+
         /// <summary>
         /// Save a key value pair in settings. Create if it doesn't exist
         /// </summary>

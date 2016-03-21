@@ -201,10 +201,8 @@ namespace ACastBackgroundAudioTask
 
             smtc.PlaybackStatus = MediaPlaybackStatus.Playing;
             smtc.DisplayUpdater.Type = MediaPlaybackType.Music;
-            //smtc.DisplayUpdater.MusicProperties.Title = item.Source.CustomProperties[TitleKey] as string;
-            smtc.DisplayUpdater.MusicProperties.Title = item.Source.ToString();
+            smtc.DisplayUpdater.MusicProperties.Title = item.Title;
 
-            //var albumArtUri = item.Source.CustomProperties[AlbumArtKey] as Uri;
             var albumArtUri = item.Source;
             if (albumArtUri != null)
                 smtc.DisplayUpdater.Thumbnail = RandomAccessStreamReference.CreateFromUri(albumArtUri);
@@ -251,9 +249,10 @@ namespace ACastBackgroundAudioTask
                     if (currentPlaybackItem == null)
                     {
                         var currentTrackId = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.TrackId);
+                        var currentTitle = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.TrackTitle);
                         var currentTrackPosition = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.Position);
 
-                        currentPlaybackItem = MediaPlaybackItem.Create(currentTrackId, currentTrackPosition);
+                        currentPlaybackItem = MediaPlaybackItem.Create(currentTrackId, currentTitle, currentTrackPosition);
                         playbackCurrentItemChanged(currentPlaybackItem);
                         currentPlaybackItem.Play();
                     } else
@@ -362,23 +361,28 @@ namespace ACastBackgroundAudioTask
             StartTrackMessage startTrackMessage;
             if (MessageService.TryParseMessage(e.Data, out startTrackMessage))
             {
-                currentPlaybackItem = MediaPlaybackItem.Create(startTrackMessage.TrackId);
-                playbackCurrentItemChanged(currentPlaybackItem);
-                currentPlaybackItem.Play();
-
-               
+                if(MediaPlaybackItem.TryCreate(
+                    startTrackMessage.TrackId, startTrackMessage.Title, startTrackMessage.Position, 
+                    out currentPlaybackItem)
+                )
+                {
+                    playbackCurrentItemChanged(currentPlaybackItem);
+                    currentPlaybackItem.Play();
+                }
             }
 
             ResumePlaybackMessage resumePlaybackMessage;
             if (MessageService.TryParseMessage(e.Data, out resumePlaybackMessage))
             {
                 var currentTrackId = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.TrackId);
+                var currentTitle = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.TrackTitle);
                 var currentTrackPosition = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.Position);
 
-                currentPlaybackItem = MediaPlaybackItem.Create(currentTrackId, currentTrackPosition);
-                playbackCurrentItemChanged(currentPlaybackItem);
-
-                currentPlaybackItem.Play();
+                if (MediaPlaybackItem.TryCreate(currentTrackId, currentTitle, currentTrackPosition, out currentPlaybackItem))
+                {
+                    playbackCurrentItemChanged(currentPlaybackItem);
+                    currentPlaybackItem.Play();
+                }
             }
 
             IsBackgroundServiceAlive isBackgroundServiceAlive;
@@ -396,8 +400,7 @@ namespace ACastBackgroundAudioTask
                 //    DateTime.Now.ToString()
                 //);
 
-                //todo:20160321
-                //DebugService.Add("Set Timer" + setSleepTimerMessage.DurationMin.ToString());
+                DebugService.Add("Set Timer" + setSleepTimerMessage.DurationMin.ToString());
 
                 ThreadPoolTimer DelayTimer = ThreadPoolTimer.CreateTimer(
                     (timer) =>
@@ -407,13 +410,13 @@ namespace ACastBackgroundAudioTask
                             ApplicationSettingsConstants.SleepTimerStopped,
                             DateTime.Now.ToString()
                         );
-                        
+
                         ApplicationSettingsHelper.SaveSettingsValue(
                             ApplicationSettingsConstants.Position,
                             BackgroundMediaPlayer.Current.Position.ToString()
                         );
                     },
-                    TimeSpan.FromMinutes(0 /*setSleepTimerMessage.DurationMin*/)    //todo:20160321
+                    TimeSpan.FromMinutes(setSleepTimerMessage.DurationMin)
                 );
             }
         }

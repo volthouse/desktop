@@ -87,10 +87,11 @@ namespace ACast
         public void Play(FeedItem feedItem)
         {
             DebugService.Add("Player: Play button pressed");
-            //string path = ApplicationData.Current.LocalFolder.Path + @"\" + feedItem.FileName;
             string path = feedItem.Path + @"\" + feedItem.FileName;
 
-            MessageService.SendMessageToBackground(new StartTrackMessage(new Uri(path)));
+            MessageService.SendMessageToBackground(new StartTrackMessage(
+                new Uri(path), feedItem.Title, TimeSpan.Zero
+            ));
 
             if (MediaPlayerState.Paused == currentPlayer.CurrentState)
             {

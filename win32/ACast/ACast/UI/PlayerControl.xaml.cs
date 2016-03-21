@@ -17,6 +17,7 @@ namespace ACast
     {
         private SynchronizationContext context;
         private DispatcherTimer timer;
+        private FeedItem currentFeedItem;
 
         public PlayerControl()
         {
@@ -47,9 +48,46 @@ namespace ACast
         public void Activate()
         {
             player_StateChanged(null, Player.Instance.State);
+            //if(currentFeedItem == null)
+            //{
+            //    string lastFeedId = ApplicationSettingsHelper.ReadSettingsValue<string>(ApplicationSettingsConstants.LastFeedId);
+            //    string lastFeedItemId = ApplicationSettingsHelper.ReadSettingsValue<string>(ApplicationSettingsConstants.LastFeedItemId);
+            //    if(!string.IsNullOrEmpty(lastFeedId))
+            //    {
+            //        FeedManager.Instance.ActivateFeedAsync(lastFeedId,
+            //            context.Post(new SendOrPostCallback((o) =>
+            //            {
+            //                Show(null);
+            //            }), null)
+            //        );
+            //    }
+
+            //}
         }
 
-        private async void sleepItemClick(object sender, RoutedEventArgs e)
+        public void Play(FeedItem feedItem)
+        {
+            currentFeedItem = feedItem;
+            textBox.Text = HtmlUtilities.ConvertToText(currentFeedItem.Summary);
+            updateApplicationSettings(feedItem);
+
+            Player.Instance.Play(currentFeedItem);
+        }
+
+        public void Show(FeedItem feedItem)
+        {
+            currentFeedItem = feedItem;
+            textBox.Text = HtmlUtilities.ConvertToText(currentFeedItem.Summary);
+            updateApplicationSettings(feedItem);
+        }
+
+        private void updateApplicationSettings(FeedItem item)
+        {
+            ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.LastFeedId, item.ParentId);
+            ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.LastFeedItemId, item.Id);
+        }
+
+        private void sleepItemClick(object sender, RoutedEventArgs e)
         {
             SleepTimerItem item = sender as SleepTimerItem;
             if(item != null)
@@ -123,12 +161,6 @@ namespace ACast
             }), null);
         }
 
-        public void Play(FeedItem feedItem)
-        {
-            textBox.Text = HtmlUtilities.ConvertToText(feedItem.Summary);
-            Player.Instance.Play(feedItem);
-        }
-
         void playButton_Click(object sender, RoutedEventArgs e)
         {
 
@@ -137,7 +169,10 @@ namespace ACast
                 case MediaPlayerState.Buffering:
                     break;
                 case MediaPlayerState.Closed:
-                    Player.Instance.Resume();
+                    if(currentFeedItem != null)
+                        Player.Instance.Play(currentFeedItem);
+                    else
+                        Player.Instance.Resume();
                     break;
                 case MediaPlayerState.Opening:
                     break;

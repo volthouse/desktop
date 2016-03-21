@@ -98,6 +98,11 @@ namespace ACast
             playerControl.Play(feedItem);
         }
 
+        public void Show(FeedItem feedItem)
+        {
+            pivot.SelectedItem = playerPivotItem;
+            playerControl.Show(feedItem);
+        }
         /// <summary>
         /// Invoked when this page is about to be displayed in a Frame.
         /// </summary>
@@ -132,8 +137,7 @@ namespace ACast
             //if (timerStopped != null)
             //    DebugService.Add("Timer stopp:" + timerStopped.ToString(), false);
 
-            //todo:20160321
-            //DebugService.Instance.Serialize();
+            DebugService.Instance.Serialize();
 
 #endif           
         }
@@ -195,8 +199,7 @@ namespace ACast
                 this.commandBar.PrimaryCommands.Add(removeButton);
                 this.commandBar.Visibility = Visibility.Visible;
 
-                //todo:20160321
-                //DebugService.Instance.Deserialize();
+                DebugService.Instance.Deserialize();
                 debugList.Items.Clear();
                 foreach (var item in DebugService.Instance.DebugMessages)
                 {
@@ -339,8 +342,7 @@ namespace ACast
             }
             else if (pivot.SelectedItem.Equals(debugPivotItem))
             {
-                //todo:20160321
-                //DebugService.Clear();
+                DebugService.Clear();
                 debugList.Items.Clear();
             }
         }

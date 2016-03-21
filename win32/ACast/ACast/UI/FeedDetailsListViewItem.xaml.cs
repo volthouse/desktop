@@ -35,11 +35,19 @@ namespace ACast
 
             FeedItem = feedItem;
             textBox.Text = feedItem.Title;
+
             pickButton.Icon = new SymbolIcon(FeedItem.DownloadState == FeedDownloadState.None ? Symbol.Pin : Symbol.UnPin);
             playButton.Visibility = FeedItem.DownloadState == FeedDownloadState.DownloadCompleted ? Visibility.Visible : Visibility.Collapsed;
 
             FeedItem.StateChanged += stateChanged;
             feedItem.DownloadProgressChanged += progressChanged;
+
+            textBox.PointerPressed += TextBox_PointerPressed;
+        }
+
+        private void TextBox_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            MainPage.Instance.Show(FeedItem);
         }
 
         private void pickButton_Click(object sender, RoutedEventArgs e)
