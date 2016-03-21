@@ -48,26 +48,26 @@ namespace ACast
             this.NavigationCacheMode = NavigationCacheMode.Required;
             
             feedListView.ItemClick += feedListView_ItemClick;
-            pivot.PivotItemLoaded += pivot_PivotItemLoaded;
+            //pivot.PivotItemLoaded += pivot_PivotItemLoaded;
 
             addFeedButton = new AddFeedButton();
-            addFeedButton.Click += addFeedButton_Click;
+            //addFeedButton.Click += addFeedButton_Click;
 
             refreshButton = new RefreshFeedButton();
-            refreshButton.Click += refreshButton_Click;
+            //refreshButton.Click += refreshButton_Click;
 
             removeButton = new RemoveFeedButton();
-            removeButton.Click += removeButton_Click;
+            //removeButton.Click += removeButton_Click;
 
             selectButton = new SelectButton();
-            selectButton.Click += selectButton_Click;
+            //selectButton.Click += selectButton_Click;
 
             cancelButton = new CancelButton();
-            cancelButton.Click += cancelButton_Click;
+            //cancelButton.Click += cancelButton_Click;
 
             searchButton = new SearchFeedButton(serachFeedDetailsBox);
-            searchButton.Click += searchButton_Click;
-            searchButton.SearchChanged += searchFeedDetailsButton_SearchChanged;
+            //searchButton.Click += searchButton_Click;
+            //searchButton.SearchChanged += searchFeedDetailsButton_SearchChanged;
 
             serachFeedDetailsBox.Visibility = Visibility.Collapsed;
 
@@ -76,21 +76,54 @@ namespace ACast
             FeedManager.Instance.DeserializeFeedsAsync(feedListLoadedAsync);
 
 
-            Valve v1 = new Valve();
+            this.commandBar.PrimaryCommands.Clear();
+            this.commandBar.PrimaryCommands.Add(addFeedButton);
+            this.commandBar.PrimaryCommands.Add(removeButton);
+            this.commandBar.PrimaryCommands.Add(refreshButton);
+            this.commandBar.PrimaryCommands.Add(selectButton);
+            this.commandBar.PrimaryCommands.Add(searchButton);
 
+            //refreshButton.Visibility = Visibility.Collapsed;
+
+            Valve v1 = new Valve();
             v1.Condition = new Func<bool>(
-                delegate() {
-                    return StateFeedPage.Instance.IsActive;                    
+                delegate ()
+                {
+                    return StateFeedPage.Instance.IsActive;
                 }
             );
 
-            v1.Out = removeButton.Show;
+            Valve v2 = new Valve();
+            v2.Condition = new Func<bool>(
+                delegate ()
+                {
+                    return !StateFeedPage.Instance.IsActive;
+                }
+            );
+
+            Valve<RoutedEventArgs> v3 = new Valve<RoutedEventArgs>();
+            v3.Condition = new Func<bool>(
+                delegate ()
+                {
+                    return StateFeedPage.Instance.IsActive;
+                }
+            );
+
+            v1.Out += removeButton.Show;
+
+            v2.Out += refreshButton.Show;
+            v2.Out += selectButton.Show;
+            v2.Out += searchButton.Show;
+
+            addFeedButton.Click += v3.In;
+            v3.Out += addFeedButton_Click;
 
             StateFeedPage.Instance.Active += v1.In;
-            
-            StateFeedPage.Instance.Activate();
-        }
+            StateFeedPage.Instance.Active += v2.In;
 
+            StateFeedPage.Instance.Activate();
+
+        }
 
         public void Play(FeedItem feedItem)
         {
@@ -416,9 +449,22 @@ namespace ACast
         {
             IsOpen = true;
         }
-    }    
+    }
 
-    public class AddFeedButton : AppBarButton
+    public class AppBarButtonBase : AppBarButton
+    {
+
+        public AppBarButtonBase()
+        {
+        }
+
+        public void Show(bool visible)
+        {
+            Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
+    public class AddFeedButton : AppBarButtonBase
     {
         public AddFeedButton()
         {
@@ -426,26 +472,15 @@ namespace ACast
         }
     }
 
-    public class RemoveFeedButton : AppBarButton
+    public class RemoveFeedButton : AppBarButtonBase
     {
-
         public RemoveFeedButton()
         {
             Icon = new SymbolIcon(Symbol.Delete);
         }
-
-        public void Show(bool visible)
-        {
-
-        }
-
-        public void Hide()
-        {
-
-        }
     }
 
-    public class RefreshFeedButton : AppBarButton
+    public class RefreshFeedButton : AppBarButtonBase
     {
         public RefreshFeedButton()
         {
@@ -453,7 +488,7 @@ namespace ACast
         }
     }
 
-    public class SelectButton : AppBarButton
+    public class SelectButton : AppBarButtonBase
     {
         public SelectButton()
         {
@@ -461,7 +496,7 @@ namespace ACast
         }
     }
 
-    public class CancelButton : AppBarButton
+    public class CancelButton : AppBarButtonBase
     {
         public CancelButton()
         {
@@ -469,7 +504,7 @@ namespace ACast
         }
     }
 
-    public class SearchButton : AppBarButton
+    public class SearchButton : AppBarButtonBase
     {
         public SearchButton()
         {
@@ -477,7 +512,7 @@ namespace ACast
         }
     }
 
-    public class SearchFeedButton : AppBarButton
+    public class SearchFeedButton : AppBarButtonBase
     {
         private AutoSuggestBox textBox;
 
@@ -548,6 +583,50 @@ namespace ACast
         
     }
 
+    public class ValveClick
+    {
+        public Func<bool> Condition;
+        public event RoutedEventHandler Out;
+
+        public void In(object sender, RoutedEventArgs e)
+        {
+            if (Out != null)
+            {
+                if (Condition != null)
+                {
+                    Out(sender, Condition() ? e : null);
+                }
+                else
+                {
+                    Out(sender, e);
+                }
+            }
+        }
+
+    }
+
+    public class Valve<T>
+    {
+        public Func<bool> Condition;
+        public event EventHandler<T> Out;
+
+        public void In(object sender, T e)
+        {
+            if (Out != null)
+            {
+                if (Condition != null)
+                {
+                    Out(sender, Condition() ? e : default(T));
+                }
+                else
+                {
+                    Out(sender, e);
+                }
+            }
+        }
+
+    }
+
 
     public class State
     {
@@ -558,179 +637,13 @@ namespace ACast
 
         public void Activate()
         {
+            IsActive = true;
             Active(true);
         }   
     }
 
     public class StateFeedPage : State
     {
-    }
-
-
-    class BackgroundTaskSample
-    {
-        public const string SampleBackgroundTaskEntryPoint = "ACastBackgroundTimerTask.BackgroundTimerTask";
-        public const string SampleBackgroundTaskName = "BackgroundTimerTask";
-        public static string SampleBackgroundTaskProgress = "";
-        public static bool SampleBackgroundTaskRegistered = false;
-
-        public const string SampleBackgroundTaskWithConditionName = "SampleBackgroundTaskWithCondition";
-        public static string SampleBackgroundTaskWithConditionProgress = "";
-        public static bool SampleBackgroundTaskWithConditionRegistered = false;
-
-        public const string ServicingCompleteTaskEntryPoint = "Tasks.ServicingComplete";
-        public const string ServicingCompleteTaskName = "ServicingCompleteTask";
-        public static string ServicingCompleteTaskProgress = "";
-        public static bool ServicingCompleteTaskRegistered = false;
-
-        public const string TimeTriggeredTaskName = "TimeTriggeredTask";
-        public static string TimeTriggeredTaskProgress = "";
-        public static bool TimeTriggeredTaskRegistered = false;
-
-        /// <summary>
-        /// Register a background task with the specified taskEntryPoint, name, trigger,
-        /// and condition (optional).
-        /// </summary>
-        /// <param name="taskEntryPoint">Task entry point for the background task.</param>
-        /// <param name="name">A name for the background task.</param>
-        /// <param name="trigger">The trigger for the background task.</param>
-        /// <param name="condition">An optional conditional event that must be true for the task to fire.</param>
-        public static async Task<BackgroundTaskRegistration> RegisterBackgroundTask(String taskEntryPoint, String name, IBackgroundTrigger trigger, IBackgroundCondition condition)
-        {
-            if (TaskRequiresBackgroundAccess(name))
-            {
-                await BackgroundExecutionManager.RequestAccessAsync();
-            }
-
-            var builder = new BackgroundTaskBuilder();
-
-            builder.Name = name;
-            builder.TaskEntryPoint = taskEntryPoint;
-            builder.SetTrigger(trigger);
-
-            if (condition != null)
-            {
-                builder.AddCondition(condition);
-
-                //
-                // If the condition changes while the background task is executing then it will
-                // be canceled.
-                //
-                builder.CancelOnConditionLoss = true;
-            }
-
-            BackgroundTaskRegistration task = builder.Register();
-
-            UpdateBackgroundTaskStatus(name, true);
-
-            //
-            // Remove previous completion status from local settings.
-            //
-            var settings = ApplicationData.Current.LocalSettings;
-            settings.Values.Remove(name);
-
-            return task;
-        }
-
-        /// <summary>
-        /// Unregister background tasks with specified name.
-        /// </summary>
-        /// <param name="name">Name of the background task to unregister.</param>
-        public static void UnregisterBackgroundTasks(string name)
-        {
-            //
-            // Loop through all background tasks and unregister any with SampleBackgroundTaskName or
-            // SampleBackgroundTaskWithConditionName.
-            //
-            foreach (var cur in BackgroundTaskRegistration.AllTasks)
-            {
-                if (cur.Value.Name == name)
-                {
-                    cur.Value.Unregister(true);
-                }
-            }
-
-            UpdateBackgroundTaskStatus(name, false);
-        }
-
-        /// <summary>
-        /// Store the registration status of a background task with a given name.
-        /// </summary>
-        /// <param name="name">Name of background task to store registration status for.</param>
-        /// <param name="registered">TRUE if registered, FALSE if unregistered.</param>
-        public static void UpdateBackgroundTaskStatus(String name, bool registered)
-        {
-            switch (name)
-            {
-                case SampleBackgroundTaskName:
-                    SampleBackgroundTaskRegistered = registered;
-                    break;
-                case SampleBackgroundTaskWithConditionName:
-                    SampleBackgroundTaskWithConditionRegistered = registered;
-                    break;
-                case ServicingCompleteTaskName:
-                    ServicingCompleteTaskRegistered = registered;
-                    break;
-                case TimeTriggeredTaskName:
-                    TimeTriggeredTaskRegistered = registered;
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// Get the registration / completion status of the background task with
-        /// given name.
-        /// </summary>
-        /// <param name="name">Name of background task to retreive registration status.</param>
-        public static String GetBackgroundTaskStatus(String name)
-        {
-            var registered = false;
-            switch (name)
-            {
-                case SampleBackgroundTaskName:
-                    registered = SampleBackgroundTaskRegistered;
-                    break;
-                case SampleBackgroundTaskWithConditionName:
-                    registered = SampleBackgroundTaskWithConditionRegistered;
-                    break;
-                case ServicingCompleteTaskName:
-                    registered = ServicingCompleteTaskRegistered;
-                    break;
-                case TimeTriggeredTaskName:
-                    registered = TimeTriggeredTaskRegistered;
-                    break;
-            }
-
-            var status = registered ? "Registered" : "Unregistered";
-
-            var settings = ApplicationData.Current.LocalSettings;
-            if (settings.Values.ContainsKey(name))
-            {
-                status += " - " + settings.Values[name].ToString();
-            }
-
-            return status;
-        }
-
-        /// <summary>
-        /// Determine if task with given name requires background access.
-        /// </summary>
-        /// <param name="name">Name of background task to query background access requirement.</param>
-        public static bool TaskRequiresBackgroundAccess(String name)
-        {
-#if WINDOWS_PHONE_APP
-            return true;
-#else
-            if (name == TimeTriggeredTaskName)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-#endif
-        }
     }
 
 }
