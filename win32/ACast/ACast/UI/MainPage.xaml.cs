@@ -73,8 +73,24 @@ namespace ACast
 
             feedItemsListView.ItemClick += feedItemsListView_ItemClick;
 
-            FeedManager.Instance.DeserializeFeedsAsync(feedListLoadedAsync);            
-        }        
+            FeedManager.Instance.DeserializeFeedsAsync(feedListLoadedAsync);
+
+
+            Valve v1 = new Valve();
+
+            v1.Condition = new Func<bool>(
+                delegate() {
+                    return StateFeedPage.Instance.IsActive;                    
+                }
+            );
+
+            v1.Out = removeButton.Show;
+
+            StateFeedPage.Instance.Active += v1.In;
+            
+            StateFeedPage.Instance.Activate();
+        }
+
 
         public void Play(FeedItem feedItem)
         {
@@ -116,7 +132,8 @@ namespace ACast
             //if (timerStopped != null)
             //    DebugService.Add("Timer stopp:" + timerStopped.ToString(), false);
 
-            DebugService.Instance.Serialize();
+            //todo:20160321
+            //DebugService.Instance.Serialize();
 
 #endif           
         }
@@ -178,7 +195,8 @@ namespace ACast
                 this.commandBar.PrimaryCommands.Add(removeButton);
                 this.commandBar.Visibility = Visibility.Visible;
 
-                DebugService.Instance.Deserialize();
+                //todo:20160321
+                //DebugService.Instance.Deserialize();
                 debugList.Items.Clear();
                 foreach (var item in DebugService.Instance.DebugMessages)
                 {
@@ -321,7 +339,8 @@ namespace ACast
             }
             else if (pivot.SelectedItem.Equals(debugPivotItem))
             {
-                DebugService.Clear();
+                //todo:20160321
+                //DebugService.Clear();
                 debugList.Items.Clear();
             }
         }
@@ -407,9 +426,20 @@ namespace ACast
 
     public class RemoveFeedButton : AppBarButton
     {
+
         public RemoveFeedButton()
         {
             Icon = new SymbolIcon(Symbol.Delete);
+        }
+
+        public void Show(bool visible)
+        {
+
+        }
+
+        public void Hide()
+        {
+
         }
     }
 
@@ -494,8 +524,45 @@ namespace ACast
     }
 
 
+    public class Valve
+    {
+        public Func<bool> Condition;
+        public Action<bool> Out;
+
+        public void In(bool value)
+        {
+            if (Out != null)
+            {
+                if (Condition != null)
+                {
+                    Out(value && Condition());
+                }
+                else
+                {
+                    Out(value);
+                }
+            }
+        }
+        
+    }
 
 
+    public class State
+    {
+        public static State Instance = new State();
+
+        public Action<bool> Active;
+        public bool IsActive;
+
+        public void Activate()
+        {
+            Active(true);
+        }   
+    }
+
+    public class StateFeedPage : State
+    {
+    }
 
 
     class BackgroundTaskSample

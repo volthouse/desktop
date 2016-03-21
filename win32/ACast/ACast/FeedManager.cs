@@ -118,20 +118,21 @@ namespace ACast
 
         public async void DeserializeFeedsAsync(SendOrPostCallback feedListLoadedAsync)
         {
-            if (await FileExtensions.FileExist2(ApplicationData.Current.LocalFolder, "FeedList.dat"))
-            {
-                StorageFile file = await ApplicationData.Current.LocalFolder.GetFileAsync("FeedList.dat");
+            //todo:20160321
+            //if (await FileExtensions.FileExist2(ApplicationData.Current.LocalFolder, "FeedList.dat"))
+            //{
+            //    StorageFile file = await ApplicationData.Current.LocalFolder.GetFileAsync("FeedList.dat");
 
-                var deserializeStream = await file.OpenStreamForReadAsync();
-                XmlSerializer deserializer = new XmlSerializer(typeof(List<Feed>));
-                feeds = (List<Feed>)deserializer.Deserialize(deserializeStream);
-                deserializeStream.Dispose();
-            }
+            //    var deserializeStream = await file.OpenStreamForReadAsync();
+            //    XmlSerializer deserializer = new XmlSerializer(typeof(List<Feed>));
+            //    feeds = (List<Feed>)deserializer.Deserialize(deserializeStream);
+            //    deserializeStream.Dispose();
+            //}
 
-            if (feedListLoadedAsync != null)
-            {
-                feedListLoadedAsync(this);
-            }
+            //if (feedListLoadedAsync != null)
+            //{
+            //    feedListLoadedAsync(this);
+            //}
         }
 
         public async void SerializeFeeds()
@@ -526,25 +527,26 @@ namespace ACast
 
         public async Task Deserialize(string fileName)
         {
-            try
-            {
-                if (await FileExtensions.FileExist2(ApplicationData.Current.LocalFolder, fileName))
-                {
-                    StorageFile file = await ApplicationData.Current.LocalFolder.GetFileAsync(fileName);
+            //todo:20160321
+            //try
+            //{
+            //    if (await FileExtensions.FileExist2(ApplicationData.Current.LocalFolder, fileName))
+            //    {
+            //        StorageFile file = await ApplicationData.Current.LocalFolder.GetFileAsync(fileName);
 
-                    var deserializeStream = await file.OpenStreamForReadAsync();
-                    XmlSerializer deserializer = new XmlSerializer(typeof(FeedItems));
-                    FeedItems feedItems = (FeedItems)deserializer.Deserialize(deserializeStream);
+            //        var deserializeStream = await file.OpenStreamForReadAsync();
+            //        XmlSerializer deserializer = new XmlSerializer(typeof(FeedItems));
+            //        FeedItems feedItems = (FeedItems)deserializer.Deserialize(deserializeStream);
 
-                    this.AddRange(feedItems);
+            //        this.AddRange(feedItems);
 
-                    deserializeStream.Dispose();
-                }
-            }
-            catch /*(Exception)*/
-            {
-                //throw;
-            }
+            //        deserializeStream.Dispose();
+            //    }
+            //}
+            //catch /*(Exception)*/
+            //{
+            //    //throw;
+            //}
         }
 
         public async Task DeleteMediaFiles()

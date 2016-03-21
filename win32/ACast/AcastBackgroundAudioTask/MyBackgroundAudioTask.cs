@@ -396,7 +396,8 @@ namespace ACastBackgroundAudioTask
                 //    DateTime.Now.ToString()
                 //);
 
-                DebugService.Add("Set Timer" + setSleepTimerMessage.DurationMin.ToString());
+                //todo:20160321
+                //DebugService.Add("Set Timer" + setSleepTimerMessage.DurationMin.ToString());
 
                 ThreadPoolTimer DelayTimer = ThreadPoolTimer.CreateTimer(
                     (timer) =>
@@ -412,7 +413,7 @@ namespace ACastBackgroundAudioTask
                             BackgroundMediaPlayer.Current.Position.ToString()
                         );
                     },
-                    TimeSpan.FromMinutes(setSleepTimerMessage.DurationMin)
+                    TimeSpan.FromMinutes(0 /*setSleepTimerMessage.DurationMin*/)    //todo:20160321
                 );
             }
         }
