@@ -33,9 +33,6 @@ namespace ACast
         private SelectButton selectButton;
         private CancelButton cancelButton;
 
-        private StateFeedPage stateFeedPage = new StateFeedPage();
-        private StateFeedDetailsPage stateFeedDetailsPage = new StateFeedDetailsPage();
-
         public static MainPage Instance;
 
         public MainPage()
@@ -50,7 +47,6 @@ namespace ACast
 
             this.NavigationCacheMode = NavigationCacheMode.Required;
             
-            feedListView.ItemClick += feedListView_ItemClick;
             //pivot.PivotItemLoaded += pivot_PivotItemLoaded;
 
             addFeedButton = new AddFeedButton();
@@ -63,7 +59,6 @@ namespace ACast
             //removeButton.Click += removeButton_Click;
 
             selectButton = new SelectButton();
-            //selectButton.Click += selectButton_Click;
 
             cancelButton = new CancelButton();
             //cancelButton.Click += cancelButton_Click;
@@ -74,7 +69,6 @@ namespace ACast
 
             serachFeedDetailsBox.Visibility = Visibility.Collapsed;
 
-            feedItemsListView.ItemClick += feedItemsListView_ItemClick;
 
             FeedManager.Instance.DeserializeFeedsAsync(feedListLoadedAsync);
 
@@ -89,22 +83,36 @@ namespace ACast
             //refreshButton.Visibility = Visibility.Collapsed;
                            
 
-            stateFeedPage.Active += addFeedButton.Show;
-            stateFeedPage.Active += removeButton.Show;
-            stateFeedPage.Active += refreshButton.Hide;
-            stateFeedPage.Active += selectButton.Hide;
-            stateFeedPage.Active += searchButton.Hide;
-
-            stateFeedDetailsPage.Active += addFeedButton.Hide;
-            stateFeedDetailsPage.Active += removeButton.Hide;
-            stateFeedDetailsPage.Active += refreshButton.Show;
-            stateFeedDetailsPage.Active += selectButton.Show;
-            stateFeedDetailsPage.Active += searchButton.Show;
+            feedListView.ItemClick += feedListView_ItemClick;
+            feedItemsListView.ItemClick += feedItemsListView_ItemClick;
+           
 
             Select<SelectionChangedEventArgs> stateSelect = new Select<SelectionChangedEventArgs>();
             pivot.SelectionChanged += stateSelect.SelectionChanged;
-            stateSelect.Out.Add(0, stateFeedPage.Activate);
-            stateSelect.Out.Add(1, stateFeedDetailsPage.Activate);
+
+            Action<bool> d1 = addFeedButton.Show;
+            d1 += removeButton.Show;
+            d1 += refreshButton.Hide;
+            d1 += selectButton.Hide;
+            d1 += searchButton.Hide;
+
+            stateSelect.Out.Add(0, d1);
+
+            Action<bool> d2 = addFeedButton.Hide;
+            d2 += removeButton.Hide;
+            d2 += refreshButton.Show;
+            d2 += selectButton.Show;
+            d2 += searchButton.Show;
+
+            stateSelect.Out.Add(1, d2);
+
+            Action<bool> d3 = addFeedButton.Hide;
+            d3 += removeButton.Hide;
+            d3 += refreshButton.Hide;
+            d3 += selectButton.Hide;
+            d3 += searchButton.Hide;
+
+            stateSelect.Out.Add(2, d3);
 
             Switch<SelectionChangedEventArgs> addButtonSwitcher = new Switch<SelectionChangedEventArgs>();
             pivot.SelectionChanged += addButtonSwitcher.SelectionChanged;
@@ -116,6 +124,7 @@ namespace ACast
             refreshButton.Click += refreshButtonSwitcher.DoActivate;
             refreshButtonSwitcher.Out.Add(1, refreshButton_Click);
 
+            selectButton.Click += selectButton_Click;
         }
 
         public void Play(FeedItem feedItem)
