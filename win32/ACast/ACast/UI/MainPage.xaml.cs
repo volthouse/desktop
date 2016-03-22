@@ -33,6 +33,9 @@ namespace ACast
         private SelectButton selectButton;
         private CancelButton cancelButton;
 
+        private StateFeedPage stateFeedPage = new StateFeedPage();
+        private StateFeedDetailsPage stateFeedDetailsPage = new StateFeedDetailsPage();
+
         public static MainPage Instance;
 
         public MainPage()
@@ -84,44 +87,34 @@ namespace ACast
             this.commandBar.PrimaryCommands.Add(searchButton);
 
             //refreshButton.Visibility = Visibility.Collapsed;
+                           
 
-            Valve v1 = new Valve();
-            v1.Condition = new Func<bool>(
-                delegate ()
-                {
-                    return StateFeedPage.Instance.IsActive;
-                }
-            );
+            stateFeedPage.Active += addFeedButton.Show;
+            stateFeedPage.Active += removeButton.Show;
+            stateFeedPage.Active += refreshButton.Hide;
+            stateFeedPage.Active += selectButton.Hide;
+            stateFeedPage.Active += searchButton.Hide;
 
-            Valve v2 = new Valve();
-            v2.Condition = new Func<bool>(
-                delegate ()
-                {
-                    return !StateFeedPage.Instance.IsActive;
-                }
-            );
+            stateFeedDetailsPage.Active += addFeedButton.Hide;
+            stateFeedDetailsPage.Active += removeButton.Hide;
+            stateFeedDetailsPage.Active += refreshButton.Show;
+            stateFeedDetailsPage.Active += selectButton.Show;
+            stateFeedDetailsPage.Active += searchButton.Show;
 
-            Valve<RoutedEventArgs> v3 = new Valve<RoutedEventArgs>();
-            v3.Condition = new Func<bool>(
-                delegate ()
-                {
-                    return StateFeedPage.Instance.IsActive;
-                }
-            );
+            Select<SelectionChangedEventArgs> stateSelect = new Select<SelectionChangedEventArgs>();
+            pivot.SelectionChanged += stateSelect.SelectionChanged;
+            stateSelect.Out.Add(0, stateFeedPage.Activate);
+            stateSelect.Out.Add(1, stateFeedDetailsPage.Activate);
 
-            v1.Out += removeButton.Show;
+            Switch<SelectionChangedEventArgs> addButtonSwitcher = new Switch<SelectionChangedEventArgs>();
+            pivot.SelectionChanged += addButtonSwitcher.SelectionChanged;
+            addFeedButton.Click += addButtonSwitcher.DoActivate;
+            addButtonSwitcher.Out.Add(0, addFeedButton_Click);
 
-            v2.Out += refreshButton.Show;
-            v2.Out += selectButton.Show;
-            v2.Out += searchButton.Show;
-
-            addFeedButton.Click += v3.In;
-            v3.Out += addFeedButton_Click;
-
-            StateFeedPage.Instance.Active += v1.In;
-            StateFeedPage.Instance.Active += v2.In;
-
-            StateFeedPage.Instance.Activate();
+            Switch<SelectionChangedEventArgs> refreshButtonSwitcher = new Switch<SelectionChangedEventArgs>();
+            pivot.SelectionChanged += refreshButtonSwitcher.SelectionChanged;
+            refreshButton.Click += refreshButtonSwitcher.DoActivate;
+            refreshButtonSwitcher.Out.Add(1, refreshButton_Click);
 
         }
 
@@ -320,7 +313,7 @@ namespace ACast
             }
         }
 
-        async private void refreshButton_Click(object sender, RoutedEventArgs e)
+        async private void refreshButton_Click(bool active)
         {
             if (pivot.SelectedItem == debugPivotItem)
             {
@@ -380,7 +373,7 @@ namespace ACast
             }
         }
 
-        async void addFeedButton_Click(object sender, RoutedEventArgs e)
+        async void addFeedButton_Click(bool value)
         {
             var newFeedUrlDlg = new FeedUrlDialog();
             await newFeedUrlDlg.ShowAsync();
@@ -461,6 +454,11 @@ namespace ACast
         public void Show(bool visible)
         {
             Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        public void Hide(bool visible)
+        {
+            Visibility = visible ? Visibility.Collapsed : Visibility.Visible;
         }
     }
 
@@ -627,23 +625,74 @@ namespace ACast
 
     }
 
+    public class Select<T>
+    {
+        private int currentIdx = -1;
+
+        public void SelectionChanged(object sender, T e)
+        {
+            Pivot pivot = sender as Pivot;
+
+            if (currentIdx >= 0 && currentIdx < Out.Count)
+            {
+                Out[currentIdx](false);
+            }
+
+            currentIdx = pivot.SelectedIndex;
+
+            if (currentIdx >= 0 && currentIdx < Out.Count)
+            {
+                Out[currentIdx](true);
+            }
+        }
+
+       
+
+        public Dictionary<int, Action<bool>> Out = new Dictionary<int, Action<bool>>();
+    }
+
+    public class Switch<T>
+    {
+        private int currentIdx = -1;
+
+        public void SelectionChanged(object sender, T e)
+        {
+            Pivot pivot = sender as Pivot;
+            currentIdx = pivot.SelectedIndex;
+        }
+
+        public void DoActivate(object sender, RoutedEventArgs e)
+        {
+            if (currentIdx >= 0 && currentIdx < Out.Count)
+            {
+                Out[currentIdx](true);
+            }
+        }
+
+        public Dictionary<int, Action<bool>> Out = new Dictionary<int, Action<bool>>();
+    }
+
 
     public class State
     {
-        public static State Instance = new State();
-
         public Action<bool> Active;
         public bool IsActive;
 
-        public void Activate()
+        public void Activate(bool active)
         {
-            IsActive = true;
-            Active(true);
-        }   
+            IsActive = active;
+            if (Active != null)
+                Active(active);
+        }
+
+        
     }
 
     public class StateFeedPage : State
     {
     }
 
+    public class StateFeedDetailsPage : State
+    {
+    }
 }
