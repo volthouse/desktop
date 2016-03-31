@@ -26,6 +26,12 @@ namespace ACast
             this.InitializeComponent();         
         }
 
+        public FeedListViewItem(Feed item)
+        {
+            this.InitializeComponent();
+            SetItem(item);
+        }
+
         public void SetText(string text)
         {
             titleTextBox.Text = text;

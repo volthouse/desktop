@@ -84,7 +84,9 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="DataBinding\FeedsIncrementalLoading.cs" />
     <Compile Include="DataBinding\FeedItemsIncrementalLoading.cs" />
+    <Compile Include="ListViewDialog.cs" />
     <Compile Include="UI\FeedListViewItem.xaml.cs">
       <DependentUpon>FeedListViewItem.xaml</DependentUpon>
     </Compile>

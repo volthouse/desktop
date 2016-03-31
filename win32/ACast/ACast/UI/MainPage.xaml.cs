@@ -26,12 +26,9 @@ namespace ACast
         private SynchronizationContext context;
         private int currentFeedIdx = 0;
 
-        private SearchFeedButton searchButton;
-        private AddFeedButton addFeedButton;
-        private RefreshFeedButton refreshButton;
-        private RemoveFeedButton removeButton;
-        private SelectButton selectButton;
-        private CancelButton cancelButton;
+        private FeedDialog feedDialog;
+        private FeedItemsDialog feedItemsDialog;
+
 
         public static MainPage Instance;
 
@@ -43,88 +40,35 @@ namespace ACast
 
             this.InitializeComponent();
 
+            this.NavigationCacheMode = NavigationCacheMode.Required;
+
             context = SynchronizationContext.Current;
 
-            this.NavigationCacheMode = NavigationCacheMode.Required;
-            
-            //pivot.PivotItemLoaded += pivot_PivotItemLoaded;
+            feedDialog = new FeedDialog(context);
+            feedItemsDialog = new FeedItemsDialog(context);
 
-            addFeedButton = new AddFeedButton();
-            //addFeedButton.Click += addFeedButton_Click;
+            feedDialog.CommandBar = commandBar;
+            feedDialog.View = feedListView;
 
-            refreshButton = new RefreshFeedButton();
-            //refreshButton.Click += refreshButton_Click;
+            feedItemsDialog.CommandBar = commandBar;
+            feedItemsDialog.View = feedItemsListView;
 
-            removeButton = new RemoveFeedButton();
-            //removeButton.Click += removeButton_Click;
+            pivot.SelectionChanged += Pivot_SelectionChanged;
+        }
 
-            selectButton = new SelectButton();
-
-            cancelButton = new CancelButton();
-            //cancelButton.Click += cancelButton_Click;
-
-            searchButton = new SearchFeedButton(serachFeedDetailsBox);
-            //searchButton.Click += searchButton_Click;
-            //searchButton.SearchChanged += searchFeedDetailsButton_SearchChanged;
-
-            serachFeedDetailsBox.Visibility = Visibility.Collapsed;
-
-
-            FeedManager.Instance.DeserializeFeedsAsync(feedListLoadedAsync);
-
-
-            this.commandBar.PrimaryCommands.Clear();
-            this.commandBar.PrimaryCommands.Add(addFeedButton);
-            this.commandBar.PrimaryCommands.Add(removeButton);
-            this.commandBar.PrimaryCommands.Add(refreshButton);
-            this.commandBar.PrimaryCommands.Add(selectButton);
-            this.commandBar.PrimaryCommands.Add(searchButton);
-
-            //refreshButton.Visibility = Visibility.Collapsed;
-                           
-
-            feedListView.ItemClick += feedListView_ItemClick;
-            feedItemsListView.ItemClick += feedItemsListView_ItemClick;
-           
-
-            Select<SelectionChangedEventArgs> stateSelect = new Select<SelectionChangedEventArgs>();
-            pivot.SelectionChanged += stateSelect.SelectionChanged;
-
-            Action<bool> d1 = addFeedButton.Show;
-            d1 += removeButton.Show;
-            d1 += refreshButton.Hide;
-            d1 += selectButton.Hide;
-            d1 += searchButton.Hide;
-
-            stateSelect.Out.Add(0, d1);
-
-            Action<bool> d2 = addFeedButton.Hide;
-            d2 += removeButton.Hide;
-            d2 += refreshButton.Show;
-            d2 += selectButton.Show;
-            d2 += searchButton.Show;
-
-            stateSelect.Out.Add(1, d2);
-
-            Action<bool> d3 = addFeedButton.Hide;
-            d3 += removeButton.Hide;
-            d3 += refreshButton.Hide;
-            d3 += selectButton.Hide;
-            d3 += searchButton.Hide;
-
-            stateSelect.Out.Add(2, d3);
-
-            Switch<SelectionChangedEventArgs> addButtonSwitcher = new Switch<SelectionChangedEventArgs>();
-            pivot.SelectionChanged += addButtonSwitcher.SelectionChanged;
-            addFeedButton.Click += addButtonSwitcher.DoActivate;
-            addButtonSwitcher.Out.Add(0, addFeedButton_Click);
-
-            Switch<SelectionChangedEventArgs> refreshButtonSwitcher = new Switch<SelectionChangedEventArgs>();
-            pivot.SelectionChanged += refreshButtonSwitcher.SelectionChanged;
-            refreshButton.Click += refreshButtonSwitcher.DoActivate;
-            refreshButtonSwitcher.Out.Add(1, refreshButton_Click);
-
-            selectButton.Click += selectButton_Click;
+        private void Pivot_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            switch (pivot.SelectedIndex)
+            {
+                case 0:
+                    feedDialog.Activate();
+                    break;
+                case 1:
+                    feedItemsDialog.Activate();
+                    break;
+                default:
+                    break;
+            }
         }
 
         public void Play(FeedItem feedItem)
@@ -165,32 +109,9 @@ namespace ACast
             if (currentTrackPosition != null)
                 DebugService.Add("Trackpos:" + currentTrackPosition.ToString());
 
-            //var timerStarted = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.SleepTimerStarted);
-            //var timerStopped = ApplicationSettingsHelper.ReadResetSettingsValue(ApplicationSettingsConstants.SleepTimerStopped);
-            //if(timerStarted != null)
-            //    DebugService.Add("Timer start:" + timerStarted.ToString(), false);
-            //if (timerStopped != null)
-            //    DebugService.Add("Timer stopp:" + timerStopped.ToString(), false);
-
             DebugService.Instance.Serialize();
 
 #endif           
-        }
-
-        void feedItemsListView_ItemClick(object sender, ItemClickEventArgs e)
-        {
-            feedItemsListView.SelectedItems.Add(e.ClickedItem);
-        }
-
-        void searchFeedDetailsButton_SearchChanged(object sender, IList<FeedItem> e)
-        {
-            List<FeedDetailsListViewItem> items = new List<FeedDetailsListViewItem>();
- 	        foreach (var item in e)
-	        {
-		        items.Add(new FeedDetailsListViewItem(item));
-	        }
-
-            feedItemsListView.ItemsSource = items;
         }
 
         private void app_Resuming(object sender, object e)
@@ -204,232 +125,6 @@ namespace ACast
             Player.Instance.ForegroundAppSuspending(e.SuspendingOperation.GetDeferral());
         }
 
-        void pivot_PivotItemLoaded(Pivot sender, PivotItemEventArgs args)
-        {
-            if (args.Item.Equals(feedsPivotItem))
-            {
-                this.commandBar.PrimaryCommands.Clear();
-                this.commandBar.PrimaryCommands.Add(addFeedButton);
-                this.commandBar.PrimaryCommands.Add(removeButton);
-                this.commandBar.Visibility = Visibility.Visible;
-            }
-            else if (args.Item.Equals(feedDetailsPivotItem))
-            {
-                this.commandBar.PrimaryCommands.Clear();
-                this.commandBar.PrimaryCommands.Add(refreshButton);
-                this.commandBar.PrimaryCommands.Add(selectButton);
-                this.commandBar.PrimaryCommands.Add(searchButton);
-                this.commandBar.Visibility = Visibility.Visible;
-            }
-            else if (args.Item.Equals(playerPivotItem))
-            {
-                playerControl.Activate();
-                this.commandBar.PrimaryCommands.Clear();
-                this.commandBar.Visibility = Visibility.Collapsed;
-            }
-            else if (args.Item.Equals(debugPivotItem))
-            {
-                this.commandBar.PrimaryCommands.Clear();
-                this.commandBar.PrimaryCommands.Add(refreshButton);
-                this.commandBar.PrimaryCommands.Add(removeButton);
-                this.commandBar.Visibility = Visibility.Visible;
-
-                DebugService.Instance.Deserialize();
-                debugList.Items.Clear();
-                foreach (var item in DebugService.Instance.DebugMessages)
-                {
-                    debugList.Items.Add(item);
-                }
-            }
-        }
-
-        void searchButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (pivot.SelectedItem.Equals(feedDetailsPivotItem))
-            {
-                feedItemsListView.SelectionMode = ListViewSelectionMode.Single;
-                this.commandBar.PrimaryCommands.Clear();
-                this.commandBar.PrimaryCommands.Add(selectButton);
-                this.commandBar.PrimaryCommands.Add(cancelButton);
-                this.commandBar.Visibility = Visibility.Visible;
-
-                searchButton.Active = true;
-            }
-        }
-
-        void cancelButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (pivot.SelectedItem.Equals(feedDetailsPivotItem))
-            {
-                if (feedItemsListView.SelectionMode == ListViewSelectionMode.Single)                
-                {
-                    if (searchButton.Active)
-                    {
-                        this.commandBar.PrimaryCommands.Clear();
-                        this.commandBar.PrimaryCommands.Add(refreshButton);
-                        this.commandBar.PrimaryCommands.Add(selectButton);
-                        this.commandBar.PrimaryCommands.Add(searchButton);
-                        this.commandBar.Visibility = Visibility.Visible;
-
-                        searchButton.Active = false;
-                    }
-                    else
-                    {
-                        this.commandBar.PrimaryCommands.Clear();
-                        this.commandBar.PrimaryCommands.Add(refreshButton);
-                        this.commandBar.PrimaryCommands.Add(selectButton);
-                        this.commandBar.PrimaryCommands.Add(searchButton);
-                        this.commandBar.Visibility = Visibility.Visible;
-                    }
-                }
-                else
-                {
-                    if (searchButton.Active)
-                    {
-                        this.commandBar.PrimaryCommands.Clear();
-                        this.commandBar.PrimaryCommands.Add(selectButton);
-                        this.commandBar.PrimaryCommands.Add(cancelButton);
-                        this.commandBar.Visibility = Visibility.Visible;
-
-                    }
-                    else
-                    {
-                        this.commandBar.PrimaryCommands.Clear();
-                        this.commandBar.PrimaryCommands.Add(refreshButton);
-                        this.commandBar.PrimaryCommands.Add(selectButton);
-                        this.commandBar.PrimaryCommands.Add(searchButton);
-                        this.commandBar.Visibility = Visibility.Visible;
-                    }
-
-                    feedItemsListView.SelectionMode = ListViewSelectionMode.Single;
-                }
-            }
-        }
-
-        void selectButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (pivot.SelectedItem.Equals(feedDetailsPivotItem))
-            {
-                if (feedItemsListView.SelectionMode == ListViewSelectionMode.Single)
-                {
-                    //if (feedItemsListView.SelectedItems.Count > 0)
-                    //    feedItemsListView.SelectedItems.Clear();
-                    feedItemsListView.SelectionMode = ListViewSelectionMode.Multiple;
-                    this.commandBar.PrimaryCommands.Clear();
-                    this.commandBar.PrimaryCommands.Add(removeButton);
-                    this.commandBar.PrimaryCommands.Add(cancelButton);
-                }               
-            }
-        }
-
-        async private void refreshButton_Click(bool active)
-        {
-            if (pivot.SelectedItem == debugPivotItem)
-            {
-                debugList.Items.Clear();
-                foreach (var item in DebugService.Instance.DebugMessages)
-                {
-                    debugList.Items.Add(item);
-                }
-            }
-            else
-            {
-                await FeedManager.Instance.UpdateFeedAsync(
-                    FeedManager.Instance.CurrentFeed.Uri.ToString(), FeedManager.Instance.CurrentFeed, true
-                );
-
-                FeedManager.Instance.ActivateFeedAsync(currentFeedIdx, feedActivatedAsync);
-            }
-        }
-
-        async void removeButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (pivot.SelectedItem.Equals(feedsPivotItem))
-            {
-                StorageFolder folder = ApplicationData.Current.LocalFolder;
-                foreach (var file in await folder.GetFilesAsync())
-                {
-                    await file.DeleteAsync();
-                }
-
-                MessageDialog dlg = new MessageDialog("All deleted");
-                await dlg.ShowAsync();
-            }
-            else if (pivot.SelectedItem.Equals(feedDetailsPivotItem))
-            {
-                if (feedItemsListView.SelectedItems.Count > 0)
-                {
-                    foreach (var item in feedItemsListView.SelectedItems.Cast<FeedDetailsListViewItem>())
-                    {
-                        await item.FeedItem.DeleteMediaFile();
-                    }
-                    FeedManager.Instance.CurrentFeed.Serialize();
-
-                    feedItemsListView.SelectedItems.Clear();
-                    feedItemsListView.SelectionMode = ListViewSelectionMode.Single;
-
-                    this.commandBar.PrimaryCommands.Clear();
-                    this.commandBar.PrimaryCommands.Add(refreshButton);
-                    this.commandBar.PrimaryCommands.Add(selectButton);
-                    this.commandBar.PrimaryCommands.Add(searchButton);
-                    this.commandBar.Visibility = Visibility.Visible;
-                }
-            }
-            else if (pivot.SelectedItem.Equals(debugPivotItem))
-            {
-                DebugService.Clear();
-                debugList.Items.Clear();
-            }
-        }
-
-        async void addFeedButton_Click(bool value)
-        {
-            var newFeedUrlDlg = new FeedUrlDialog();
-            await newFeedUrlDlg.ShowAsync();
-
-            FeedManager.Instance.DeserializeFeedsAsync(feedListLoadedAsync);
-        }             
-
-        private void feedListLoadedAsync(object sender)
-        {
-            context.Post(new SendOrPostCallback((o) =>
-            {
-                feedListView.Items.Clear();
-
-                foreach (Feed item in FeedManager.Instance.Feeds)
-                {
-                    FeedListViewItem customItem = new FeedListViewItem();
-                    customItem.SetItem(item);
-                    feedListView.Items.Add(customItem);
-                }
-            }), null);
-        } 
-
-        void feedActivatedAsync(object sender)
-        {
-            context.Post(updateFeedItemsListView, null);
-        }
-
-        private async void updateFeedItemsListView(object state)
-        {
-            feedItemsListView.ItemsSource = new FeedItemsIncrementalLoading();
-            await feedItemsListView.LoadMoreItemsAsync();
-
-            pivot.SelectedItem = feedDetailsPivotItem;
-        }
-
-        private void feedListDeletedAsync(object sender)
-        {
-            FeedManager.Instance.DeserializeFeedsAsync(feedListLoadedAsync);
-        }
-
-        private void feedListView_ItemClick(object sender, ItemClickEventArgs e)
-        {
-            int feedIdx = feedListView.Items.IndexOf(e.ClickedItem);
-            FeedManager.Instance.ActivateFeedAsync(feedIdx, feedActivatedAsync);
-
-            currentFeedIdx = feedIdx;
-        }       
     }
 
     public class CustomFlyout : Flyout
@@ -471,33 +166,33 @@ namespace ACast
         }
     }
 
-    public class AddFeedButton : AppBarButtonBase
+    public class AddButton : AppBarButtonBase
     {
-        public AddFeedButton()
+        public AddButton()
         {
             Icon = new SymbolIcon(Symbol.Add);
         }
     }
 
-    public class RemoveFeedButton : AppBarButtonBase
+    public class RemoveButton : AppBarButtonBase
     {
-        public RemoveFeedButton()
+        public RemoveButton()
         {
             Icon = new SymbolIcon(Symbol.Delete);
         }
     }
 
-    public class RefreshFeedButton : AppBarButtonBase
+    public class RefreshButton : AppBarButtonBase
     {
-        public RefreshFeedButton()
+        public RefreshButton()
         {
             Icon = new SymbolIcon(Symbol.Refresh);
         }
     }
 
-    public class SelectButton : AppBarButtonBase
+    public class MultiSelectButton : AppBarButtonBase
     {
-        public SelectButton()
+        public MultiSelectButton()
         {
             Icon = new SymbolIcon(Symbol.Bullets);
         }
@@ -565,143 +260,5 @@ namespace ACast
                 SearchChanged(this, items);
             }
         }
-    }
-
-
-    public class Valve
-    {
-        public Func<bool> Condition;
-        public Action<bool> Out;
-
-        public void In(bool value)
-        {
-            if (Out != null)
-            {
-                if (Condition != null)
-                {
-                    Out(value && Condition());
-                }
-                else
-                {
-                    Out(value);
-                }
-            }
-        }
-        
-    }
-
-    public class ValveClick
-    {
-        public Func<bool> Condition;
-        public event RoutedEventHandler Out;
-
-        public void In(object sender, RoutedEventArgs e)
-        {
-            if (Out != null)
-            {
-                if (Condition != null)
-                {
-                    Out(sender, Condition() ? e : null);
-                }
-                else
-                {
-                    Out(sender, e);
-                }
-            }
-        }
-
-    }
-
-    public class Valve<T>
-    {
-        public Func<bool> Condition;
-        public event EventHandler<T> Out;
-
-        public void In(object sender, T e)
-        {
-            if (Out != null)
-            {
-                if (Condition != null)
-                {
-                    Out(sender, Condition() ? e : default(T));
-                }
-                else
-                {
-                    Out(sender, e);
-                }
-            }
-        }
-
-    }
-
-    public class Select<T>
-    {
-        private int currentIdx = -1;
-
-        public void SelectionChanged(object sender, T e)
-        {
-            Pivot pivot = sender as Pivot;
-
-            if (currentIdx >= 0 && currentIdx < Out.Count)
-            {
-                Out[currentIdx](false);
-            }
-
-            currentIdx = pivot.SelectedIndex;
-
-            if (currentIdx >= 0 && currentIdx < Out.Count)
-            {
-                Out[currentIdx](true);
-            }
-        }
-
-       
-
-        public Dictionary<int, Action<bool>> Out = new Dictionary<int, Action<bool>>();
-    }
-
-    public class Switch<T>
-    {
-        private int currentIdx = -1;
-
-        public void SelectionChanged(object sender, T e)
-        {
-            Pivot pivot = sender as Pivot;
-            currentIdx = pivot.SelectedIndex;
-        }
-
-        public void DoActivate(object sender, RoutedEventArgs e)
-        {
-            if (currentIdx >= 0 && currentIdx < Out.Count)
-            {
-                Out[currentIdx](true);
-            }
-        }
-
-        public Dictionary<int, Action<bool>> Out = new Dictionary<int, Action<bool>>();
-    }
-
-
-    public class State
-    {
-        public Action<bool> Active;
-        public bool IsActive;
-
-        public void Activate(bool active)
-        {
-            IsActive = active;
-            if (Active != null)
-                Active(active);
-        }
-
-        
-    }
-
-    public class StateFeedPage : State
-    {
-    }
-
-    public class StateFeedDetailsPage : State
-    {
     }
 }
