@@ -84,7 +84,7 @@ namespace ACast
             deferral.Complete();
         }
 
-        public void Play(FeedItem feedItem)
+        public void Play(FeedItemObsolet feedItem)
         {
             DebugService.Add("Player: Play button pressed");
             string path = feedItem.Path + @"\" + feedItem.FileName;

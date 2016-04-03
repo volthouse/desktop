@@ -23,11 +23,11 @@ namespace ACast
     {
         private SynchronizationContext context;
 
-        public FeedItem FeedItem { get; private set; }
+        public FeedItemObsolet FeedItem { get; private set; }
 
         public FeedDetailsListViewItem() { }
 
-        public FeedDetailsListViewItem(FeedItem feedItem)
+        public FeedDetailsListViewItem(FeedItemObsolet feedItem)
         {
             this.InitializeComponent();
 

@@ -26,7 +26,7 @@ namespace ACast
             this.InitializeComponent();         
         }
 
-        public FeedListViewItem(Feed item)
+        public FeedListViewItem(FeedObsolet item)
         {
             this.InitializeComponent();
             SetItem(item);
@@ -37,7 +37,7 @@ namespace ACast
             titleTextBox.Text = text;
         }
 
-        public void SetItem(Feed item)
+        public void SetItem(FeedObsolet item)
         {
             titleTextBox.Text = item.Title;// +" dies ist ein Test";
             image.Source = new BitmapImage(new Uri(item.ImageUri));
@@ -46,14 +46,14 @@ namespace ACast
             item.PropertyChanged += feedPropertyChanged;
         }
 
-        private void update(Feed item)
+        private void update(FeedObsolet item)
         {
             infoTextBox.Text = string.Format("Downloaded {0}", item.MediaDownloadCount);
         }
 
         private void feedPropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            Feed feed = sender as Feed;
+            FeedObsolet feed = sender as FeedObsolet;
             if(feed != null)
                 update(feed);
         }

@@ -17,7 +17,7 @@ namespace ACast
     {
         private SynchronizationContext context;
         private DispatcherTimer timer;
-        private FeedItem currentFeedItem;
+        private FeedItemObsolet currentFeedItem;
 
         public PlayerControl()
         {
@@ -65,7 +65,7 @@ namespace ACast
             //}
         }
 
-        public void Play(FeedItem feedItem)
+        public void Play(FeedItemObsolet feedItem)
         {
             currentFeedItem = feedItem;
             textBox.Text = HtmlUtilities.ConvertToText(currentFeedItem.Summary);
@@ -74,14 +74,14 @@ namespace ACast
             Player.Instance.Play(currentFeedItem);
         }
 
-        public void Show(FeedItem feedItem)
+        public void Show(FeedItemObsolet feedItem)
         {
             currentFeedItem = feedItem;
             textBox.Text = HtmlUtilities.ConvertToText(currentFeedItem.Summary);
             updateApplicationSettings(feedItem);
         }
 
-        private void updateApplicationSettings(FeedItem item)
+        private void updateApplicationSettings(FeedItemObsolet item)
         {
             ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.LastFeedId, item.ParentId);
             ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.LastFeedItemId, item.Id);

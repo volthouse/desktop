@@ -1,4 +1,6 @@
-﻿using ACastShared;
+﻿using ACast.Db;
+using ACastShared;
+using SQLite;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -28,11 +30,12 @@ namespace ACast
         private CancellationTokenSource cts;
         private List<DownloadOperation> activeDownloads;
         private List<FeedDownload> activeFeedItemDownloads;
-        private List<Feed> feeds = new List<Feed>();
+        private List<FeedObsolet> feeds = new List<FeedObsolet>();
                 
         public static FeedManager Instance = new FeedManager();
 
-        public Feed CurrentFeed;
+        public FeedObsolet CurrentFeed;
+
 
         public FeedManager()
         {
@@ -41,10 +44,26 @@ namespace ACast
             activeDownloads = new List<DownloadOperation>();
             activeFeedItemDownloads = new List<FeedDownload>();
                         
-            CurrentFeed = new Feed();
+            CurrentFeed = new FeedObsolet();
+
         }
 
-        public IReadOnlyList<Feed> Feeds
+        public static IEnumerable<Feed> Feeds {
+            get
+            {
+                return SQLiteDb.GetFeeds();
+            }
+        }
+
+        public static IEnumerable<FeedItem> FeedItems
+        {
+            get
+            {
+                return SQLiteDb.GetFeedItems();
+            }
+        }
+
+        public IReadOnlyList<FeedObsolet> FeedsObsolet
         {
             get { return feeds; }
         }
@@ -88,36 +107,16 @@ namespace ACast
                 return;
             }
 
-            var existingItem = from item in feeds where item.Uri.CompareTo(uri.ToString()) == 0 select item;
+            Feed feed = new Feed()
+            {
+                Uri = uri.ToString(),
+                LastUpdateDate = new DateTime(1970, 1, 1)
+            };
 
-            if (existingItem.Count() == 0)
-            {              
+            SQLiteDb.AddFeed(feed);
 
-                try
-                {
-                    string newId = Guid.NewGuid().ToString();
-                    Feed feed = new Feed() { Id = newId, Uri = uri.ToString(), FileName = newId + ".dat", ItemsFilename = newId + "_items.dat" };
-
-                    SyndicationFeed sfeed = new SyndicationFeed();
-                    await UpdateFeedAsync(uri.ToString(), feed, false);
-
-                    if (feed.ImageUri != null)
-                    {
-                        //feed.ImageUri = ApplicationData.Current.LocalFolder.Path + "\\" + feed.FileName + ".img";
-                        await DownloadFile(feed.ImageUri.ToString(), ApplicationData.Current.LocalFolder, feed.FileName + ".img");
-                    }
-
-                    feeds.Add(feed);
-
-                    SerializeFeeds();
-                }
-                catch /*(Exception)*/
-                {
-                    
-                    //throw;
-                }
-                
-            }
+            SyndicationFeed sfeed = new SyndicationFeed();
+            await UpdateFeedAsync(feed.Uri, feed, false);
 
             if (addFeedCompletedAsync != null)
             {
@@ -127,50 +126,14 @@ namespace ACast
 
         public async void RemoveFeed(int feedIdx)
         {
-            if(feedIdx >= 0 && feedIdx < feeds.Count) {
-                await feeds[feedIdx].Delete();
-            }
+            //if(feedIdx >= 0 && feedIdx < feeds.Count) {
+            //    await feeds[feedIdx].Delete();
+            //}
 
-            SerializeFeeds();
+            //SerializeFeeds();
         }
 
-        public async void DeserializeFeedsAsync(SendOrPostCallback feedListLoadedAsync)
-        {
-            if (await FileExtensions.FileExist2(ApplicationData.Current.LocalFolder, "FeedList.dat"))
-            {
-                StorageFile file = await ApplicationData.Current.LocalFolder.GetFileAsync("FeedList.dat");
-
-                var deserializeStream = await file.OpenStreamForReadAsync();
-                XmlSerializer deserializer = new XmlSerializer(typeof(List<Feed>));
-                feeds = (List<Feed>)deserializer.Deserialize(deserializeStream);
-                deserializeStream.Dispose();
-            }
-
-            if (feedListLoadedAsync != null)
-            {
-                feedListLoadedAsync(this);
-            }
-        }
-
-        public async void SerializeFeeds()
-        {
-
-            try
-            {
-                var serializeStream = await ApplicationData.Current.LocalFolder.OpenStreamForWriteAsync("FeedList.dat", CreationCollisionOption.ReplaceExisting);
-                XmlSerializer serializer = new XmlSerializer(typeof(List<Feed>));
-                serializer.Serialize(serializeStream, feeds);
-                serializeStream.Flush();
-                serializeStream.Dispose();
-            }
-            catch /*(Exception)*/
-            {
-
-                //throw;
-            }
-        } 
-
-        public async void StartDownloadMedia(FeedItem feedItem) {
+        public async void StartDownloadMedia(FeedItemObsolet feedItem) {
             feedItem.FileName = Guid.NewGuid() + ".mp3";
 
             //StorageFolder externalDevices = Windows.Storage.KnownFolders.RemovableDevices;
@@ -190,21 +153,19 @@ namespace ACast
 
             if (feeds.Count() > 0)
             {
-                Feed feed = feeds.First();
+                FeedObsolet feed = feeds.First();
 
                 feed.MediaDownloadCount++;
 
                 var feedItems = from item in CurrentFeed.Items where item.Id.CompareTo(feedItem.Id) == 0 select item;
                 if (feedItems.Count() > 0)
                 {
-                    FeedItem item = feedItems.First();
+                    FeedItemObsolet item = feedItems.First();
                     item.SetState(FeedDownloadState.DownloadCompleted);
                     item.FileName = feedItem.FileName;
                     item.Path = feedItem.Path;
                 }               
                 
-                CurrentFeed.Serialize();
-                SerializeFeeds();
             }
 
         }
@@ -250,43 +211,32 @@ namespace ACast
                 feed.ImageUri = syndicationFeed.ImageUri.ToString();
             } else {
                 var elementExtensions = from item in syndicationFeed.ElementExtensions where item.NodeName.CompareTo("image") == 0 select item;
-                if (elementExtensions.Count() > 0)
+                if (elementExtensions.Any())
                 {
-                    if (elementExtensions.First().AttributeExtensions.Count > 0)
+                    if (elementExtensions.First().AttributeExtensions.Any())
                     {
                         feed.ImageUri = elementExtensions.First().AttributeExtensions[0].Value;
                     }
                 }
             }
 
-
-            var newSyndicationItems = from item in syndicationFeed.Items where item.PublishedDate > feed.LastUpdateDate select item;
-
-            //feed.LastUpdateDate = new DateTimeOffset(2016, 3, 8, 0, 0, 0, TimeSpan.Zero);
-            //var newSyndicationItems = from item in syndicationFeed.Items where item.PublishedDate < feed.LastUpdateDate select item;
-
-
-            if(feed.Items.Count > 0)
+            if (feed.ImageUri != null)
             {
-                foreach (var syndicationItem in newSyndicationItems)
-                {
-                    feed.Items.Insert(0, new FeedItem(feed.Id, syndicationItem));
-                }
-            } else
-            {
-                foreach (var syndicationItem in newSyndicationItems)
-                {
-                    feed.Items.Add(new FeedItem(feed.Id, syndicationItem));
-                }
+                feed.ImageFilename = Guid.NewGuid().ToString() + ".img";
+                await DownloadFile(feed.ImageUri.ToString(), ApplicationData.Current.LocalFolder, feed.ImageFilename);
             }
 
-            feed.Serialize();
+            DateTimeOffset offset = new DateTimeOffset(feed.LastUpdateDate);
+            var newSyndicationItems = from item in syndicationFeed.Items where item.PublishedDate > offset select item;
 
-            if (serializeFeedList)
+            if(newSyndicationItems.Any())
             {
-                SerializeFeeds();
-            }            
+                SQLiteDb.AddFeedItems(feed.Id, newSyndicationItems);
+            }
 
+            feed.LastUpdateDate = DateTime.Now;
+
+            SQLiteDb.UpdateFeed(feed);
         }
 
         private async Task HandleDownloadAsync(DownloadOperation download, bool start)
@@ -441,11 +391,11 @@ namespace ACast
         PlayerCompleted
     }
 
-    public class Feed : INotifyPropertyChanged
+    public class FeedObsolet : INotifyPropertyChanged
     {
         private int mediaDownloadCount;
 
-        public Feed()
+        public FeedObsolet()
         {
             Title = string.Empty;
             Id = string.Empty;
@@ -524,7 +474,7 @@ namespace ACast
         }
     }
 
-    public class FeedItems : List<FeedItem>
+    public class FeedItems : List<FeedItemObsolet>
     {
         public async Task Serialize(string fileName)
         {
@@ -582,16 +532,16 @@ namespace ACast
                 
     }
 
-    public class FeedItem
+    public class FeedItemObsolet
     {
         [XmlIgnore]
         public EventHandler StateChanged;
         [XmlIgnore]
         public EventHandler<float> DownloadProgressChanged;
 
-        public FeedItem() {  }
+        public FeedItemObsolet() {  }
 
-        public FeedItem(string parentId, SyndicationItem item)
+        public FeedItemObsolet(string parentId, SyndicationItem item)
         {
             ParentId = parentId;
             Id = item.Id;

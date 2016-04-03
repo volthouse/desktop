@@ -13,6 +13,7 @@ using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
 using System.Linq;
 using Windows.ApplicationModel.Background;
+using ACast.Db;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=391641
 
@@ -54,6 +55,9 @@ namespace ACast
             feedItemsDialog.View = feedItemsListView;
 
             pivot.SelectionChanged += Pivot_SelectionChanged;
+
+            SQLiteDb.Create();
+
         }
 
         private void Pivot_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -71,13 +75,13 @@ namespace ACast
             }
         }
 
-        public void Play(FeedItem feedItem)
+        public void Play(FeedItemObsolet feedItem)
         {
             pivot.SelectedItem = playerPivotItem;
             playerControl.Play(feedItem);
         }
 
-        public void Show(FeedItem feedItem)
+        public void Show(FeedItemObsolet feedItem)
         {
             pivot.SelectedItem = playerPivotItem;
             playerControl.Show(feedItem);
@@ -218,7 +222,7 @@ namespace ACast
     {
         private AutoSuggestBox textBox;
 
-        public event EventHandler<IList<FeedItem>> SearchChanged;
+        public event EventHandler<IList<FeedItemObsolet>> SearchChanged;
 
         public SearchFeedButton(AutoSuggestBox textBox)
         {
@@ -254,11 +258,24 @@ namespace ACast
         {
             var currentFeedItems = from item in FeedManager.Instance.CurrentFeed.Items where item.Summary.Contains(searchText) select item;
 
-            List<FeedItem> items = new List<FeedItem>(currentFeedItems);
+            List<FeedItemObsolet> items = new List<FeedItemObsolet>(currentFeedItems);
             if (SearchChanged != null)
             {
                 SearchChanged(this, items);
             }
+        }
+    }
+
+    public class MyListview : ListView
+    {
+        protected override DependencyObject GetContainerForItemOverride()
+        {
+            return base.GetContainerForItemOverride();
+        }
+
+        protected override void ClearContainerForItemOverride(DependencyObject element, object item)
+        {
+            base.ClearContainerForItemOverride(element, item);
         }
     }
 }

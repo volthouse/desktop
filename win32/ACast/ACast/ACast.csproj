@@ -84,9 +84,12 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="DataAccess.cs" />
     <Compile Include="DataBinding\FeedsIncrementalLoading.cs" />
     <Compile Include="DataBinding\FeedItemsIncrementalLoading.cs" />
     <Compile Include="ListViewDialog.cs" />
+    <Compile Include="SQLite.cs" />
+    <Compile Include="SQLiteAsync.cs" />
     <Compile Include="UI\FeedListViewItem.xaml.cs">
       <DependentUpon>FeedListViewItem.xaml</DependentUpon>
     </Compile>
@@ -154,6 +157,17 @@
       <Project>{33cc324b-ff7c-4ec3-a6fe-51be91a72919}</Project>
       <Name>ACastShared</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <SDKReference Include="Microsoft.VCLibs, version=12.0">
+      <Name>Microsoft Visual C++ 2013 Runtime Package for Windows Phone</Name>
+    </SDKReference>
+    <SDKReference Include="SQLite.WP81, Version=3.12.0">
+      <Name>SQLite for Windows Phone 8.1</Name>
+    </SDKReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '12.0' ">
     <VisualStudioVersion>12.0</VisualStudioVersion>

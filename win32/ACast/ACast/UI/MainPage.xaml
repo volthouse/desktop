@@ -1,21 +1,41 @@
 ﻿<Page
-    x:Class="ACast.MainPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:ACast"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">       
+    xmlns:Db="using:ACast.Db"
+    x:Class="ACast.MainPage"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Page.Resources>
+        <DataTemplate x:Key="DataTemplate1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <TextBox x:Name="textBox" TextWrapping="Wrap" Text="{Binding Title, Mode=TwoWay}" VerticalAlignment="Stretch" Width="267"/>
+                <Image x:Name="image" Height="101" Width="267" Grid.Row="1" Source="{Binding IPath, Mode=OneWay}"/>
+            </Grid>
+        </DataTemplate>
+        <DataTemplate x:Key="DataTemplate2">
+            <Grid>
+                <TextBox x:Name="textBox" HorizontalAlignment="Left" Margin="0" TextWrapping="Wrap" Text="{Binding Title, Mode=TwoWay}" VerticalAlignment="Top"/>
+            </Grid>
+        </DataTemplate>
+    </Page.Resources>
+    <Page.DataContext>
+        <Db:Feed/>
+    </Page.DataContext>
+
     <Page.BottomAppBar>
-        <CommandBar x:Name="commandBar">            
-        </CommandBar>
+        <CommandBar x:Name="commandBar"/>
     </Page.BottomAppBar>
     <Pivot x:Name="pivot" Title="Pivot">
         <PivotItem x:Name="feedsPivotItem" Header="Feeds">
             <Grid>
-                <ListView x:Name="feedListView" IsItemClickEnabled="True"/>
-            </Grid>            
+                <ListView x:Name="feedListView" IsItemClickEnabled="True" ItemsSource="{Binding Feeds, Mode=OneWay}" ItemTemplate="{StaticResource DataTemplate1}"/>
+            </Grid>
         </PivotItem>
         <PivotItem x:Name="feedDetailsPivotItem" Header="Items">
             <Grid>
@@ -24,7 +44,7 @@
                     <RowDefinition/>
                 </Grid.RowDefinitions>
                 <AutoSuggestBox x:Name="serachFeedDetailsBox" PlaceholderText="Search"/>
-                <ListView x:Name="feedItemsListView" IsItemClickEnabled="True" Grid.Row="1" Margin="0,0.333,0,-2.167"/>
+                <ListView x:Name="feedItemsListView" IsItemClickEnabled="True" Grid.Row="1" Margin="0,0.333,0,-2.167" ItemTemplate="{StaticResource DataTemplate2}"/>
             </Grid>
         </PivotItem>
         <PivotItem x:Name="playerPivotItem" Header="Player">
