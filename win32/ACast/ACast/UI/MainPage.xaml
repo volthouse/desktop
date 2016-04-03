@@ -9,18 +9,31 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
     <Page.Resources>
         <DataTemplate x:Key="DataTemplate1">
-            <Grid>
+            <Grid Height="100" Margin="0,0,0,5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
-                <TextBox x:Name="textBox" TextWrapping="Wrap" Text="{Binding Title, Mode=TwoWay}" VerticalAlignment="Stretch" Width="267"/>
-                <Image x:Name="image" Height="101" Width="267" Grid.Row="1" Source="{Binding IPath, Mode=OneWay}"/>
+                <TextBlock x:Name="textBox" TextWrapping="Wrap" Text="{Binding Title, Mode=TwoWay}" VerticalAlignment="Stretch" Grid.Column="1" HorizontalAlignment="Left" Margin="5,0,0,0"/>
+                <Image x:Name="image" Source="{Binding IPath, Mode=OneWay}" Stretch="UniformToFill" Grid.RowSpan="2" VerticalAlignment="Top"/>
             </Grid>
         </DataTemplate>
         <DataTemplate x:Key="DataTemplate2">
             <Grid>
-                <TextBox x:Name="textBox" HorizontalAlignment="Left" Margin="0" TextWrapping="Wrap" Text="{Binding Title, Mode=TwoWay}" VerticalAlignment="Top"/>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="150"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <TextBlock x:Name="textBox" HorizontalAlignment="Stretch" Margin="0" TextWrapping="Wrap" Text="{Binding Title, Mode=TwoWay}" VerticalAlignment="Stretch"/>
+                <local:AddButton x:Name="feedItemButton" Grid.Column="1" Click="feedItemButton_Click"/>
             </Grid>
         </DataTemplate>
     </Page.Resources>

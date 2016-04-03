@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.UI.Xaml.Media.Imaging;
 using Windows.Web.Syndication;
@@ -16,17 +17,23 @@ namespace ACast.Db
 {
     public class SQLiteDb
     {        
-        public static async void Create()
+        public static void Create()
         {
-            var folders = await KnownFolders.RemovableDevices.GetFoldersAsync();
-            if (!await FileExtensions.FileExist2(folders[0], "Database.db"))
+            var task = Task.Run(async () =>
             {
-                using (SQLiteConnection db = new SQLiteConnection(Path.Combine("D:\\", "Database.db"), true))
+
+                var folders = await KnownFolders.RemovableDevices.GetFoldersAsync();
+                if (!await FileExtensions.FileExist2(folders[0], "Database.db"))
                 {
-                    db.CreateTable<FeedItem>();
-                    db.CreateTable<Feed>();
+                    using (SQLiteConnection db = new SQLiteConnection(Path.Combine("D:\\", "Database.db"), true))
+                    {
+                        db.CreateTable<FeedItem>();
+                        db.CreateTable<Feed>();
+                    }
                 }
-            }
+            });
+
+            task.Wait();
         }
 
         public static IEnumerable<Feed> GetFeeds()

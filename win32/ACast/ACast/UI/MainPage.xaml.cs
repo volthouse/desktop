@@ -129,6 +129,10 @@ namespace ACast
             Player.Instance.ForegroundAppSuspending(e.SuspendingOperation.GetDeferral());
         }
 
+        private void feedItemButton_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 
     public class CustomFlyout : Flyout
@@ -157,6 +161,7 @@ namespace ACast
 
         public AppBarButtonBase()
         {
+            Debug.WriteLine("Add button");
         }
 
         public void Show(bool visible)
