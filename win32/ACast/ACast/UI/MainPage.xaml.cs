@@ -130,7 +130,7 @@ namespace ACast
 
         private void feedItemButton_Click(object sender, RoutedEventArgs e)
         {
-            AddButton button = e.OriginalSource as AddButton;
+            AppBarButton button = e.OriginalSource as AppBarButton;
             if (button != null)
             {
                 FeedItem feedItem = button.DataContext as FeedItem;
@@ -139,6 +139,19 @@ namespace ACast
                     FeedManager.Instance.DownloadFeedItemMedia(feedItem);
                 }
             }           
+        }
+
+        private void playItemButton_Click(object sender, RoutedEventArgs e)
+        {
+            AppBarButton button = e.OriginalSource as AppBarButton;
+            if (button != null)
+            {
+                FeedItem feedItem = button.DataContext as FeedItem;
+                if (feedItem != null)
+                {
+                    Player.Instance.Play(feedItem);
+                }
+            }
         }
     }
 

@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.Storage;
+using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media.Imaging;
 using Windows.Web.Syndication;
 
@@ -173,13 +174,28 @@ namespace ACast.Database
         public Double PlayerPos { get; set; }
 
         [Ignore]
+        public Symbol MediaItemStateSymbol {
+            get {
+                switch (MediaDownloadState)
+                {
+                    case 1:
+                        return Symbol.UnPin;
+                    default:
+                        return Symbol.Pin;
+                }
+            }
+        }
+
+        [Ignore]
         public int DownloadProgress { get; set; }
 
         public void ReportDownloadProgress(object sender, int progress)
         {
             DownloadProgress = progress;
             if (PropertyChanged != null)
+            {
                 PropertyChanged(this, new PropertyChangedEventArgs("DownloadProgress"));
+            }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

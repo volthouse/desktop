@@ -26,21 +26,28 @@
         <DataTemplate x:Key="DataTemplate2">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="150"/>
+                    <ColumnDefinition Width="180"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition/>
                     <RowDefinition/>
+                    <RowDefinition/>
                 </Grid.RowDefinitions>
                 <TextBlock x:Name="textBox" HorizontalAlignment="Stretch" Margin="0" TextWrapping="Wrap" Text="{Binding Title, Mode=TwoWay}" VerticalAlignment="Stretch"/>
                 <TextBlock x:Name="infoTextBox" TextWrapping="Wrap" Text="{Binding DownloadProgress, Mode=OneWay}" VerticalAlignment="Stretch" Grid.Row="1" HorizontalAlignment="Left" Margin="5,0,0,0"/>
-                <local:AddButton x:Name="feedItemButton" Grid.Column="1" Click="feedItemButton_Click"/>
+                <AppBarButton x:Name="feedItemButton" Grid.Column="1" Click="feedItemButton_Click" Grid.RowSpan="2">
+                    <AppBarButton.Icon>
+                        <SymbolIcon Symbol="{Binding MediaItemStateSymbol}"/>
+                    </AppBarButton.Icon>
+                </AppBarButton>
+                <AppBarButton x:Name="playItemButton" Grid.Column="2" Click="playItemButton_Click" Grid.RowSpan="2" Icon="Play"/>
             </Grid>
         </DataTemplate>
     </Page.Resources>
     <Page.DataContext>
-        <Db:Feed/>
+        <Db:FeedItem/>
     </Page.DataContext>
 
     <Page.BottomAppBar>
