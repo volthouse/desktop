@@ -1,0 +1,1 @@
+update Feed set MediaCount = (select count(*) from FeedItem where ParentId = 1 And MediaDownloadState > 0) where Id = 1
