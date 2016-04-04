@@ -4,7 +4,7 @@
     xmlns:local="using:ACast"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:Db="using:ACast.Db"
+    xmlns:Db="using:ACast.Database"
     x:Class="ACast.MainPage"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
     <Page.Resources>
@@ -18,8 +18,9 @@
                     <RowDefinition/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
-                <TextBlock x:Name="textBox" TextWrapping="Wrap" Text="{Binding Title, Mode=TwoWay}" VerticalAlignment="Stretch" Grid.Column="1" HorizontalAlignment="Left" Margin="5,0,0,0"/>
-                <Image x:Name="image" Source="{Binding IPath, Mode=OneWay}" Stretch="UniformToFill" Grid.RowSpan="2" VerticalAlignment="Top"/>
+                <Image x:Name="image" Source="{Binding Image, Mode=OneWay}" Stretch="UniformToFill" Grid.RowSpan="2" VerticalAlignment="Top"/>
+                <TextBlock x:Name="titleTextBox" TextWrapping="Wrap" Text="{Binding Title, Mode=OneWay}" VerticalAlignment="Stretch" Grid.Column="1" HorizontalAlignment="Left" Margin="5,0,0,0"/>
+                <TextBlock x:Name="infoTextBox" TextWrapping="Wrap" Text="{Binding Info, Mode=OneWay}" VerticalAlignment="Stretch" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Left" Margin="5,0,0,0"/>
             </Grid>
         </DataTemplate>
         <DataTemplate x:Key="DataTemplate2">
@@ -33,6 +34,7 @@
                     <RowDefinition/>
                 </Grid.RowDefinitions>
                 <TextBlock x:Name="textBox" HorizontalAlignment="Stretch" Margin="0" TextWrapping="Wrap" Text="{Binding Title, Mode=TwoWay}" VerticalAlignment="Stretch"/>
+                <TextBlock x:Name="infoTextBox" TextWrapping="Wrap" Text="{Binding DownloadProgress, Mode=OneWay}" VerticalAlignment="Stretch" Grid.Row="1" HorizontalAlignment="Left" Margin="5,0,0,0"/>
                 <local:AddButton x:Name="feedItemButton" Grid.Column="1" Click="feedItemButton_Click"/>
             </Grid>
         </DataTemplate>

@@ -1,5 +1,4 @@
-﻿using ACast.DataBinding;
-using ACast.Db;
+﻿using ACast.Database;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,7 +11,7 @@ using Windows.UI.Xaml.Controls;
 
 namespace ACast
 {
-    public class ListViewDialog<T>
+    public class ListViewDialog
     {
         protected AddButton addButton = new AddButton();
         protected RemoveButton removeButton = new RemoveButton();
@@ -21,7 +20,6 @@ namespace ACast
         protected CancelButton cancelButton = new CancelButton();
         protected RefreshButton refreshButton = new RefreshButton();
 
-        protected IListController<T> listController;
         protected ListView listView;
         protected SynchronizationContext context;
 
@@ -49,7 +47,6 @@ namespace ACast
             OnItemClick(e.ClickedItem);
         }
 
-        public virtual IListController<T> CreateList() { return null; }
 
         public virtual void Activate()
         {
@@ -92,7 +89,7 @@ namespace ACast
         }
     }
 
-    public class FeedDialog :  ListViewDialog<Feed>
+    public class FeedDialog :  ListViewDialog
     {
         public FeedDialog(SynchronizationContext context) : base(context)
         {
@@ -108,11 +105,21 @@ namespace ACast
         {
             FeedUrlDialog dlg = new FeedUrlDialog();
             await dlg.ShowAsync();
+            View.ItemsSource = FeedManager.Feeds;
+        }
+
+        public override void OnItemClick(object item)
+        {
+            Feed feed = item as Feed;
+            if (feed != null)
+            {
+                FeedManager.CurrentFeedId = feed.Id;
+            }
         }
 
     }
 
-    public class FeedItemsDialog : ListViewDialog<FeedListController>
+    public class FeedItemsDialog : ListViewDialog
     {
         public FeedItemsDialog(SynchronizationContext context) : base(context)
         {
@@ -122,51 +129,8 @@ namespace ACast
         {
             base.Activate();
             View.ItemsSource = FeedManager.FeedItems;
+
         }
     }
-
-    public interface IListController<T>
-    {
-        void Load(Action onLoaded);
-        void Add(Action onAdded);
-        void Remove(Action onRemoved);
-        IEnumerable<T> List { get; }
-    }
-
-
-    public class FeedListController : IListController<FeedListViewItem>
-    {
-        private FeedsIncrementalLoading list;
-
-        public FeedListController()
-        {
-        }
-
-        public IEnumerable<FeedListViewItem> List
-        {
-            get
-            {
-                return list;
-            }
-
-        }
-
-        public void Add(Action onAdded)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Load(Action onLoaded)
-        {
-          
-            onLoaded();
-        }
-
-        public void Remove(Action onRemoved)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
 
 }

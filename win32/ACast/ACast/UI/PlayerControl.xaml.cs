@@ -17,7 +17,6 @@ namespace ACast
     {
         private SynchronizationContext context;
         private DispatcherTimer timer;
-        private FeedItemObsolet currentFeedItem;
 
         public PlayerControl()
         {
@@ -65,27 +64,27 @@ namespace ACast
             //}
         }
 
-        public void Play(FeedItemObsolet feedItem)
-        {
-            currentFeedItem = feedItem;
-            textBox.Text = HtmlUtilities.ConvertToText(currentFeedItem.Summary);
-            updateApplicationSettings(feedItem);
+        //public void Play(FeedItemObsolet feedItem)
+        //{
+        //    currentFeedItem = feedItem;
+        //    textBox.Text = HtmlUtilities.ConvertToText(currentFeedItem.Summary);
+        //    updateApplicationSettings(feedItem);
 
-            Player.Instance.Play(currentFeedItem);
-        }
+        //    Player.Instance.Play(currentFeedItem);
+        //}
 
-        public void Show(FeedItemObsolet feedItem)
-        {
-            currentFeedItem = feedItem;
-            textBox.Text = HtmlUtilities.ConvertToText(currentFeedItem.Summary);
-            updateApplicationSettings(feedItem);
-        }
+        //public void Show(FeedItemObsolet feedItem)
+        //{
+        //    currentFeedItem = feedItem;
+        //    textBox.Text = HtmlUtilities.ConvertToText(currentFeedItem.Summary);
+        //    updateApplicationSettings(feedItem);
+        //}
 
-        private void updateApplicationSettings(FeedItemObsolet item)
-        {
-            ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.LastFeedId, item.ParentId);
-            ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.LastFeedItemId, item.Id);
-        }
+        //private void updateApplicationSettings(FeedItemObsolet item)
+        //{
+        //    ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.LastFeedId, item.ParentId);
+        //    ApplicationSettingsHelper.SaveSettingsValue(ApplicationSettingsConstants.LastFeedItemId, item.Id);
+        //}
 
         private void sleepItemClick(object sender, RoutedEventArgs e)
         {
@@ -169,10 +168,10 @@ namespace ACast
                 case MediaPlayerState.Buffering:
                     break;
                 case MediaPlayerState.Closed:
-                    if(currentFeedItem != null)
-                        Player.Instance.Play(currentFeedItem);
-                    else
-                        Player.Instance.Resume();
+                    //if(currentFeedItem != null)
+                    //    Player.Instance.Play(currentFeedItem);
+                    //else
+                    //    Player.Instance.Resume();
                     break;
                 case MediaPlayerState.Opening:
                     break;

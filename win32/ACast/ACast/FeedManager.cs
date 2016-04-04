@@ -1,9 +1,10 @@
-﻿using ACast.Db;
+﻿using ACast.Database;
 using ACastShared;
 using SQLite;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -25,27 +26,20 @@ using Windows.Web.Syndication;
 
 namespace ACast
 {
-    public class FeedManager : Windows.ApplicationModel.Background.IBackgroundTask
+    public class FeedManager 
     {
         private CancellationTokenSource cts;
         private List<DownloadOperation> activeDownloads;
-        private List<FeedDownload> activeFeedItemDownloads;
-        private List<FeedObsolet> feeds = new List<FeedObsolet>();
                 
         public static FeedManager Instance = new FeedManager();
 
-        public FeedObsolet CurrentFeed;
-
+        public static int CurrentFeedId = -1;
 
         public FeedManager()
         {
             cts = new CancellationTokenSource();
 
             activeDownloads = new List<DownloadOperation>();
-            activeFeedItemDownloads = new List<FeedDownload>();
-                        
-            CurrentFeed = new FeedObsolet();
-
         }
 
         public static IEnumerable<Feed> Feeds {
@@ -59,43 +53,8 @@ namespace ACast
         {
             get
             {
-                return SQLiteDb.GetFeedItems();
+                return SQLiteDb.GetFeedItems(CurrentFeedId);
             }
-        }
-
-        public IReadOnlyList<FeedObsolet> FeedsObsolet
-        {
-            get { return feeds; }
-        }
-
-        public async void ActivateFeedAsync(int feedIdx, SendOrPostCallback feedActivatedAsync)
-        {
-            CurrentFeed = feeds[feedIdx];
-
-            await CurrentFeed.Activate();
-
-            if (feedActivatedAsync != null)
-            {
-                feedActivatedAsync(this);
-            }
-        }
-
-        public async void ActivateFeedAsync(string feedId, SendOrPostCallback feedActivatedAsync)
-        {
-            var feed = from item in this.feeds where item.Id.CompareTo(feedId) == 0 select item;
-
-            if(feed.First() != null)
-            {
-                CurrentFeed = feed.First();
-
-                await CurrentFeed.Activate();
-
-                if (feedActivatedAsync != null)
-                {
-                    feedActivatedAsync(this);
-                }
-            }
-
         }
 
         public async void AddFeed(string stringUri, SendOrPostCallback addFeedCompletedAsync)
@@ -124,73 +83,6 @@ namespace ACast
             }
         }
 
-        public async void RemoveFeed(int feedIdx)
-        {
-            //if(feedIdx >= 0 && feedIdx < feeds.Count) {
-            //    await feeds[feedIdx].Delete();
-            //}
-
-            //SerializeFeeds();
-        }
-
-        public async void StartDownloadMedia(FeedItemObsolet feedItem) {
-            feedItem.FileName = Guid.NewGuid() + ".mp3";
-
-            //StorageFolder externalDevices = Windows.Storage.KnownFolders.RemovableDevices;
-
-            //IReadOnlyList<StorageFolder> subfolders = await externalDevices.GetFoldersAsync();
-            //IReadOnlyList<StorageFolder> subfolders1 = await subfolders[0].GetFoldersAsync();
-
-            //feedItem.Path = subfolders1[4].Path;
-
-            //await DownloadFile(feedItem.Uri, subfolders1[4] /*ApplicationData.Current.LocalFolder*/, feedItem.FileName);
-
-            feedItem.Path = ApplicationData.Current.LocalFolder.Path;
-
-            await DownloadFile(feedItem.Uri, ApplicationData.Current.LocalFolder, feedItem.FileName);
-
-            var feeds = from item in this.feeds where item.Id.CompareTo(feedItem.ParentId) == 0 select item;
-
-            if (feeds.Count() > 0)
-            {
-                FeedObsolet feed = feeds.First();
-
-                feed.MediaDownloadCount++;
-
-                var feedItems = from item in CurrentFeed.Items where item.Id.CompareTo(feedItem.Id) == 0 select item;
-                if (feedItems.Count() > 0)
-                {
-                    FeedItemObsolet item = feedItems.First();
-                    item.SetState(FeedDownloadState.DownloadCompleted);
-                    item.FileName = feedItem.FileName;
-                    item.Path = feedItem.Path;
-                }               
-                
-            }
-
-        }
-
-        public async Task DownloadFile(string uri, StorageFolder folder, string fileName)
-        {
-
-            StorageFile destinationFile;
-            try
-            {
-                destinationFile = await folder.CreateFileAsync(fileName, CreationCollisionOption.GenerateUniqueName);
-            }
-            catch /*(FileNotFoundException ex)*/
-            {
-                //rootPage.NotifyUser("Error while creating file: " + ex.Message, NotifyType.ErrorMessage);
-                return;
-            }
-
-            BackgroundDownloader downloader = new BackgroundDownloader();
-            DownloadOperation download = downloader.CreateDownload(new Uri(uri), destinationFile);
-
-            await HandleDownloadAsync(download, true);
-        }
-
-
         public async Task UpdateFeedAsync(string stringUri, Feed feed, bool serializeFeedList)
         {
             SyndicationClient client = new SyndicationClient();
@@ -207,9 +99,12 @@ namespace ACast
 
             feed.Title = syndicationFeed.Title.Text;
             feed.Uri = stringUri;
-            if (syndicationFeed.ImageUri != null) {
+            if (syndicationFeed.ImageUri != null)
+            {
                 feed.ImageUri = syndicationFeed.ImageUri.ToString();
-            } else {
+            }
+            else
+            {
                 var elementExtensions = from item in syndicationFeed.ElementExtensions where item.NodeName.CompareTo("image") == 0 select item;
                 if (elementExtensions.Any())
                 {
@@ -223,13 +118,13 @@ namespace ACast
             if (feed.ImageUri != null)
             {
                 feed.ImageFilename = Guid.NewGuid().ToString() + ".img";
-                await DownloadFile(feed.ImageUri.ToString(), ApplicationData.Current.LocalFolder, feed.ImageFilename);
+                await DownloadFile(feed.ImageUri.ToString(), ApplicationData.Current.LocalFolder, feed.ImageFilename, null);
             }
 
             DateTimeOffset offset = new DateTimeOffset(feed.LastUpdateDate);
             var newSyndicationItems = from item in syndicationFeed.Items where item.PublishedDate > offset select item;
 
-            if(newSyndicationItems.Any())
+            if (newSyndicationItems.Any())
             {
                 SQLiteDb.AddFeedItems(feed.Id, newSyndicationItems);
             }
@@ -239,16 +134,50 @@ namespace ACast
             SQLiteDb.UpdateFeed(feed);
         }
 
-        private async Task HandleDownloadAsync(DownloadOperation download, bool start)
+        public async void DownloadFeedItemMedia(FeedItem feedItem)
+        {
+            feedItem.FileName = Guid.NewGuid() + ".mp3";
+            feedItem.Path = ApplicationData.Current.LocalFolder.Path;
+
+            await DownloadFile(feedItem.MediaUri, ApplicationData.Current.LocalFolder, 
+                feedItem.FileName, feedItem.ReportDownloadProgress);
+
+            feedItem.MediaDownloadState = 1;
+
+            SQLiteDb.UpdateFeedItem(feedItem);
+
+        }
+
+        public async Task DownloadFile(string uri, StorageFolder folder, string fileName, Action<object, int> progressDelegate)
+        {
+
+            StorageFile destinationFile;
+            try
+            {
+                destinationFile = await folder.CreateFileAsync(fileName, CreationCollisionOption.GenerateUniqueName);
+            }
+            catch (FileNotFoundException ex)
+            {
+                MarshalLog("Error while creating file: " + ex.Message);
+                return;
+            }
+
+            BackgroundDownloader downloader = new BackgroundDownloader();
+            DownloadOperation download = downloader.CreateDownload(new Uri(uri), destinationFile);
+
+            await HandleDownloadAsync(download, true, progressDelegate);
+        }
+
+        private async Task HandleDownloadAsync(DownloadOperation download, bool start, Action<object, int> progressDelegate)
         {
             try
             {
-                LogStatus("Running: " + download.Guid, NotifyType.StatusMessage);
+                MarshalLog("Running: " + download.Guid);
 
                 // Store the download so we can pause/resume.
                 activeDownloads.Add(download);
 
-                Progress<DownloadOperation> progressCallback = new Progress<DownloadOperation>(DownloadProgressInternal);
+                DownloadProgress progressCallback = new DownloadProgress(progressDelegate, SynchronizationContext.Current);
                 if (start)
                 {
                     // Start the download and attach a progress handler.
@@ -259,15 +188,14 @@ namespace ACast
                     // The download was already running when the application started, re-attach the progress handler.
                     await download.AttachAsync().AsTask(cts.Token, progressCallback);
                 }
-
                 ResponseInformation response = download.GetResponseInformation();
 
-                LogStatus(String.Format(CultureInfo.CurrentCulture, "Completed: {0}, Status Code: {1}",
-                    download.Guid, response.StatusCode), NotifyType.StatusMessage);
+                MarshalLog(String.Format(CultureInfo.CurrentCulture, "Completed: {0}, Status Code: {1}",
+                    download.Guid, response.StatusCode));
             }
             catch (TaskCanceledException)
             {
-                LogStatus("Canceled: " + download.Guid, NotifyType.StatusMessage);
+                MarshalLog("Canceled: " + download.Guid);
             }
             catch (Exception ex)
             {
@@ -282,47 +210,6 @@ namespace ACast
             }
         }
 
-        private void DownloadProgressInternal(DownloadOperation download)
-        {
-            MarshalLog(String.Format(CultureInfo.CurrentCulture, "Progress: {0}, Status: {1}", download.Guid,
-                download.Progress.Status));
-
-            float percent = 100;
-            if (download.Progress.TotalBytesToReceive > 0)
-            {
-                percent = download.Progress.BytesReceived * 100 / download.Progress.TotalBytesToReceive;
-            }
-
-            MarshalLog(String.Format(CultureInfo.CurrentCulture, " - Transfered bytes: {0} of {1}, {2}%",
-                download.Progress.BytesReceived, download.Progress.TotalBytesToReceive, percent));
-
-            if (download.Progress.HasRestarted)
-            {
-                MarshalLog(" - Download restarted");
-            }
-
-            if (download.Progress.HasResponseChanged)
-            {
-                // We've received new response headers from the server.
-                MarshalLog(" - Response updated; Header count: " + download.GetResponseInformation().Headers.Count);
-
-                // If you want to stream the response data this is a good time to start.
-                // download.GetResultStreamAt(0);
-            }
-
-            if (download.Progress.Status == BackgroundTransferStatus.Completed)
-            {
-
-            }
-
-            var feedItems = from item in CurrentFeed.Items where item.Uri.CompareTo(download.RequestedUri.ToString()) == 0 select item;
-
-            foreach (var item in feedItems)
-            {
-                item.SetProgress(percent);
-            }
-        }
-
         private bool IsExceptionHandled(string title, Exception ex, DownloadOperation download = null)
         {
             WebErrorStatus error = BackgroundTransferError.GetStatus(ex.HResult);
@@ -333,281 +220,46 @@ namespace ACast
 
             if (download == null)
             {
-                LogStatus(String.Format(CultureInfo.CurrentCulture, "Error: {0}: {1}", title, error),
-                    NotifyType.ErrorMessage);
+                DebugService.Add(String.Format(CultureInfo.CurrentCulture, "Error: {0}: {1}", title, error));
             }
             else
             {
-                LogStatus(String.Format(CultureInfo.CurrentCulture, "Error: {0} - {1}: {2}", download.Guid, title,
-                    error), NotifyType.ErrorMessage);
+                DebugService.Add(String.Format(CultureInfo.CurrentCulture, "Error: {0} - {1}: {2}", download.Guid, title, error));
             }
 
             return true;
         }
 
-        // When operations happen on a background thread we have to marshal UI updates back to the UI thread.
         private void MarshalLog(string value)
         {
-            //var ignore = this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-            //{
-            //    Log(value);
-            //});
+            SynchronizationContext.Current.Post((o) => { DebugService.Add(value); }, null);
         }
 
-        private void Log(string message)
-        {
-            //outputField.Text += message + "\r\n";
-        }
-
-        private void LogStatus(string message, NotifyType type)
-        {
-            //rootPage.NotifyUser(message, type);
-            //Log(message);
-        }
-
-        public void Run(Windows.ApplicationModel.Background.IBackgroundTaskInstance taskInstance)
-        {
-            //throw new NotImplementedException();
-        }
     }
 
-    public enum NotifyType
+    public class DownloadProgress :  Progress<DownloadOperation>
     {
-        StatusMessage,
-        ErrorMessage
-    };
+        private Action<object, int> progressDelegate;
+        private SynchronizationContext context;
 
-    public enum FeedDownloadState
-    {
-        None,
-        DownloadStarted,
-        DownloadCompleted
-    }
-
-    public enum FeedPlayerState
-    {
-        None,
-        PlayerStarted,
-        PlayerCompleted
-    }
-
-    public class FeedObsolet : INotifyPropertyChanged
-    {
-        private int mediaDownloadCount;
-
-        public FeedObsolet()
+        public DownloadProgress(Action<object, int> progressDelegate, SynchronizationContext context)
         {
-            Title = string.Empty;
-            Id = string.Empty;
-            Title = string.Empty;
-            Uri = string.Empty;
-            FileName = string.Empty;
-            ImageUri = string.Empty;
-            ItemsFilename = string.Empty; // "FeedItems_" + Guid.NewGuid().ToString() +".dat";
-            MediaDownloadCount = 0;
-            Items = new FeedItems();
+            this.progressDelegate = progressDelegate;
+            this.context = context;
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        [XmlIgnore]
-        public FeedItems Items;
-
-        public string Id;
-        public string Title;
-        public string Uri;
-        public string FileName;
-        public string ImageUri;
-        public string ItemsFilename;
-
-        [XmlElement("lastUpdatedTime")]
-        public string lastUpdatedTimeForXml // format: 2011-11-11T15:05:46.4733406+01:00
+        protected override void OnReport(DownloadOperation value)
         {
-            get { return LastUpdateDate.ToString("yyyy-MM-ddTHH:mm:ss.fffffffzzz"); }
-            set { LastUpdateDate = DateTimeOffset.Parse(value); }
-        }
+            base.OnReport(value);
 
-        [XmlIgnore]
-        public DateTimeOffset LastUpdateDate;
-
-        public int MediaDownloadCount {
-            get { return mediaDownloadCount; }
-            set {
-                mediaDownloadCount = value;
-                onPropertyChanged("MediaDownloadCount");
-            }
-        }
-
-        public override string ToString()
-        {
-            return Uri;
-        }
-
-        public async Task Activate()
-        {
-           await Items.Deserialize(ItemsFilename);
-        }
-
-        public async void Serialize()
-        {
-            await Items.Serialize(ItemsFilename);
-        }
-
-        public async Task Delete()
-        {
-            await Items.Deserialize(ItemsFilename);
-            await Items.DeleteMediaFiles();
-
-            //string path = Path.GetDirectoryName(ItemsFilename);
-            string path = ApplicationData.Current.LocalFolder.Path;
-            StorageFolder folder = await StorageFolder.GetFolderFromPathAsync(path);
-            StorageFile file = await folder.GetFileAsync(ItemsFilename);
-            await file.DeleteAsync(StorageDeleteOption.PermanentDelete);
-        }
-
-        private void onPropertyChanged(string propertyName)
-        {
-            if(PropertyChanged != null)
+            if (progressDelegate != null)
             {
-                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-            }
-        }
-    }
-
-    public class FeedItems : List<FeedItemObsolet>
-    {
-        public async Task Serialize(string fileName)
-        {
-            try
-            {
-                var serializeStream = await ApplicationData.Current.LocalFolder.OpenStreamForWriteAsync(fileName, CreationCollisionOption.ReplaceExisting);
-                XmlSerializer serializer = new XmlSerializer(typeof(FeedItems));
-                serializer.Serialize(serializeStream, this);
-                serializeStream.Flush();
-                serializeStream.Dispose();
-            }
-            catch /*(Exception)*/
-            {
-                //throw;
-            }
-        }
-
-        public async Task Deserialize(string fileName)
-        {
-            try
-            {
-                if (await FileExtensions.FileExist2(ApplicationData.Current.LocalFolder, fileName))
+                context.Post((o) =>
                 {
-                    StorageFile file = await ApplicationData.Current.LocalFolder.GetFileAsync(fileName);
-
-                    var deserializeStream = await file.OpenStreamForReadAsync();
-                    XmlSerializer deserializer = new XmlSerializer(typeof(FeedItems));
-                    FeedItems feedItems = (FeedItems)deserializer.Deserialize(deserializeStream);
-
-                    this.AddRange(feedItems);
-
-                    deserializeStream.Dispose();
-                }
-            }
-            catch /*(Exception)*/
-            {
-                //throw;
-            }
-        }
-
-        public async Task DeleteMediaFiles()
-        {
-            try
-            {
-                foreach (var item in this)
-                {
-                    await item.DeleteMediaFile();
-                }
-            }
-            catch /*(Exception)*/
-            {
-                //throw;
-            }
-        }
-                
-    }
-
-    public class FeedItemObsolet
-    {
-        [XmlIgnore]
-        public EventHandler StateChanged;
-        [XmlIgnore]
-        public EventHandler<float> DownloadProgressChanged;
-
-        public FeedItemObsolet() {  }
-
-        public FeedItemObsolet(string parentId, SyndicationItem item)
-        {
-            ParentId = parentId;
-            Id = item.Id;
-            Title = item.Title.Text;
-            Summary = item.Summary.Text;
-            PublishedDate = item.PublishedDate;
-           
-            var x = from l in item.Links where l.MediaType.CompareTo("audio/mpeg") == 0 select l;
-
-            if (x.Count() > 0)
-            {
-                Uri = x.FirstOrDefault().Uri.ToString();
-            }
-
-        }
-
-        public string ParentId;
-        public string Id;
-        public string Path;
-        public string FileName;
-        public string Uri;
-        public FeedDownloadState DownloadState;
-        public FeedPlayerState PlayerState;
-        public float PlayerPos;
-        public string Title;
-        public string Summary;
-        public DateTimeOffset PublishedDate;
-
-        public void SetState(FeedDownloadState state)
-        {
-            DownloadState = state;
-            if (StateChanged != null)
-            {
-                StateChanged(this, EventArgs.Empty);
-            }
-        }
-
-        public void SetProgress(float progress)
-        {
-            if (DownloadProgressChanged != null)
-            {
-                DownloadProgressChanged(this, progress);
-            }
-        }
-
-        public async Task DeleteMediaFile()
-        {
-            if (!string.IsNullOrEmpty(Path))
-            {
-                StorageFolder folder = await StorageFolder.GetFolderFromPathAsync(Path);
-                StorageFile file = await folder.GetFileAsync(FileName);
-                await file.DeleteAsync(StorageDeleteOption.PermanentDelete);
-                DownloadState = FeedDownloadState.None;
+                    int percent = (int)(value.Progress.BytesReceived * 100 / value.Progress.TotalBytesToReceive);
+                    progressDelegate(this, percent);
+                }, null);
             }
         }
     }
-
-    public class FeedDownload
-    {
-        public FeedDownload(DownloadOperation op)
-        {
-
-        }
-        public string ItemsFilename;
-        public int ItemIdx;
-    }
-
-    
 }

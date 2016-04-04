@@ -5,6 +5,7 @@ using ACastShared;
 using SQLite;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -13,7 +14,7 @@ using Windows.Storage;
 using Windows.UI.Xaml.Media.Imaging;
 using Windows.Web.Syndication;
 
-namespace ACast.Db
+namespace ACast.Database
 {
     public class SQLiteDb
     {        
@@ -50,17 +51,25 @@ namespace ACast.Db
             return null;
         }
 
-        public static IEnumerable<FeedItem> GetFeedItems()
+        public static IEnumerable<FeedItem> GetFeedItems(int parentId)
         {
+            if (parentId < 0)
+            {
+                return null;
+            }
+
             try
             {
                 SQLiteConnection db = new SQLiteConnection(Path.Combine("D:\\", "Database.db"), true);
-                if (db.Table<FeedItem>().Any())
-                    return db.Table<FeedItem>();
+                if (db.Table<FeedItem>().Any()) {
+                    var items = from item in db.Table<FeedItem>() where item.ParentId == parentId select item;
+                    return items;
+                }
             }
             catch /*(Exception ex)*/
             {
             }
+
             return null;
         }
 
@@ -98,8 +107,17 @@ namespace ACast.Db
                 }                
             }
         }
+
+        public static void UpdateFeedItem(FeedItem feedItem)
+        {
+            using (SQLiteConnection db = new SQLiteConnection(Path.Combine("D:\\", "Database.db"), true))
+            {
+                db.Update(feedItem);
+            }
+        }
     }
-    public partial class FeedItem
+
+    public partial class FeedItem : INotifyPropertyChanged
     {
         public static FeedItem Create(Int32 parentId, SyndicationItem item)
         {
@@ -149,9 +167,22 @@ namespace ACast.Db
         
         [MaxLength(100)]
         public String FileName { get; set; }
-        
+
+        public Int32 MediaDownloadState { get; set; }
+
         public Double PlayerPos { get; set; }
-        
+
+        [Ignore]
+        public int DownloadProgress { get; set; }
+
+        public void ReportDownloadProgress(object sender, int progress)
+        {
+            DownloadProgress = progress;
+            if (PropertyChanged != null)
+                PropertyChanged(this, new PropertyChangedEventArgs("DownloadProgress"));
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
     }
     
     public partial class Feed
@@ -176,11 +207,32 @@ namespace ACast.Db
         public DateTime LastUpdateDate { get; set; }
 
         [Ignore]
-        public BitmapImage IPath
+        public BitmapImage Image
         {
             get {
                 string filePathName =  Path.Combine(ApplicationData.Current.LocalFolder.Path, ImageFilename);
                 return new BitmapImage(new Uri(filePathName));
+            }
+        }
+
+        [Ignore]
+        public string Info
+        {
+            get
+            {
+                int downloadCount = 0;
+                try
+                {
+                    using (SQLiteConnection db = new SQLiteConnection(Path.Combine("D:\\", "Database.db"), true))
+                    {
+                        downloadCount = db.ExecuteScalar<int>("SELECT Count(*) FROM FeedItem WHERE ParentId = ? And MediaDownloadState = 1", Id);
+                    }
+                }
+                catch /*(Exception)*/
+                {
+                }
+
+                return string.Format("Downloaded: {0}", downloadCount);
             }
         }
     }

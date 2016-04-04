@@ -1,5 +1,4 @@
-﻿using ACast.DataBinding;
-using ACastShared;
+﻿using ACastShared;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -13,7 +12,7 @@ using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
 using System.Linq;
 using Windows.ApplicationModel.Background;
-using ACast.Db;
+using ACast.Database;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=391641
 
@@ -75,17 +74,17 @@ namespace ACast
             }
         }
 
-        public void Play(FeedItemObsolet feedItem)
-        {
-            pivot.SelectedItem = playerPivotItem;
-            playerControl.Play(feedItem);
-        }
+        //public void Play(FeedItemObsolet feedItem)
+        //{
+        //    pivot.SelectedItem = playerPivotItem;
+        //    playerControl.Play(feedItem);
+        //}
 
-        public void Show(FeedItemObsolet feedItem)
-        {
-            pivot.SelectedItem = playerPivotItem;
-            playerControl.Show(feedItem);
-        }
+        //public void Show(FeedItemObsolet feedItem)
+        //{
+        //    pivot.SelectedItem = playerPivotItem;
+        //    playerControl.Show(feedItem);
+        //}
         /// <summary>
         /// Invoked when this page is about to be displayed in a Frame.
         /// </summary>
@@ -131,7 +130,15 @@ namespace ACast
 
         private void feedItemButton_Click(object sender, RoutedEventArgs e)
         {
-
+            AddButton button = e.OriginalSource as AddButton;
+            if (button != null)
+            {
+                FeedItem feedItem = button.DataContext as FeedItem;
+                if (feedItem != null)
+                {
+                    FeedManager.Instance.DownloadFeedItemMedia(feedItem);
+                }
+            }           
         }
     }
 
@@ -223,64 +230,4 @@ namespace ACast
         }
     }
 
-    public class SearchFeedButton : AppBarButtonBase
-    {
-        private AutoSuggestBox textBox;
-
-        public event EventHandler<IList<FeedItemObsolet>> SearchChanged;
-
-        public SearchFeedButton(AutoSuggestBox textBox)
-        {
-            this.textBox = textBox;
-            this.textBox.KeyDown += textBox_KeyDown;
-            Icon = new SymbolIcon(Symbol.Zoom);
-        }
-
-        //void textBox_GotFocus(object sender, RoutedEventArgs e)
-        //{
-        //    Windows.UI.ViewManagement.InputPane.GetForCurrentView().TryShow();
-        //}
-
-        public bool Active {
-            get { return textBox.Visibility == Visibility.Visible; }
-            set { textBox.Visibility = value ? Visibility.Visible : Visibility.Collapsed; }
-        }
-
-        private void textBox_KeyDown(object sender, Windows.UI.Xaml.Input.KeyRoutedEventArgs e)
-        {
-            if (e.Key == Windows.System.VirtualKey.Enter)
-            {
-                textBox.Items.Add(textBox.Text);                
-                //textBox.Visibility = Visibility.Collapsed;
-                //Icon = new SymbolIcon(Symbol.Zoom);
-                //Windows.UI.ViewManagement.InputPane.GetForCurrentView().TryHide();
-                //textBox.Focus(FocusState.Unfocused);
-                search(textBox.Text);                
-            }
-        }
-
-        private void search(string searchText)
-        {
-            var currentFeedItems = from item in FeedManager.Instance.CurrentFeed.Items where item.Summary.Contains(searchText) select item;
-
-            List<FeedItemObsolet> items = new List<FeedItemObsolet>(currentFeedItems);
-            if (SearchChanged != null)
-            {
-                SearchChanged(this, items);
-            }
-        }
-    }
-
-    public class MyListview : ListView
-    {
-        protected override DependencyObject GetContainerForItemOverride()
-        {
-            return base.GetContainerForItemOverride();
-        }
-
-        protected override void ClearContainerForItemOverride(DependencyObject element, object item)
-        {
-            base.ClearContainerForItemOverride(element, item);
-        }
-    }
 }
