@@ -32,12 +32,9 @@
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition/>
-                    <RowDefinition/>
-                    <RowDefinition/>
                 </Grid.RowDefinitions>
                 <TextBlock x:Name="textBox" HorizontalAlignment="Stretch" Margin="0" TextWrapping="Wrap" Text="{Binding Title, Mode=TwoWay}" VerticalAlignment="Stretch"/>
-                <TextBlock x:Name="infoTextBox" TextWrapping="Wrap" Text="{Binding DownloadProgress, Mode=OneWay}" VerticalAlignment="Stretch" Grid.Row="1" HorizontalAlignment="Left" Margin="5,0,0,0"/>
-                <AppBarButton x:Name="feedItemButton" Grid.Column="1" Click="feedItemButton_Click" Grid.RowSpan="2">
+                <AppBarButton x:Name="feedItemButton" Grid.Column="1" Click="feedItemButton_Click" Grid.RowSpan="1" Label="{Binding DownloadProgress}">
                     <AppBarButton.Icon>
                         <SymbolIcon Symbol="{Binding MediaItemStateSymbol}"/>
                     </AppBarButton.Icon>

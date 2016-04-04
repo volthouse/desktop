@@ -120,6 +120,8 @@ namespace ACast.Database
 
     public partial class FeedItem : INotifyPropertyChanged
     {
+        private Int32 mediaDownloadState;
+
         public static FeedItem Create(Int32 parentId, SyndicationItem item)
         {
             var feedItem = new FeedItem()
@@ -169,7 +171,14 @@ namespace ACast.Database
         [MaxLength(100)]
         public String FileName { get; set; }
 
-        public Int32 MediaDownloadState { get; set; }
+        public Int32 MediaDownloadState {
+            get { return mediaDownloadState; }
+            set {
+                mediaDownloadState = value;
+                OnPropertyChanged("MediaDownloadState");
+                OnPropertyChanged("MediaItemStateSymbol");
+            }
+        }
 
         public Double PlayerPos { get; set; }
 
@@ -187,14 +196,19 @@ namespace ACast.Database
         }
 
         [Ignore]
-        public int DownloadProgress { get; set; }
+        public string DownloadProgress { get; set; }
 
         public void ReportDownloadProgress(object sender, int progress)
         {
-            DownloadProgress = progress;
+            DownloadProgress = progress.ToString();
+            OnPropertyChanged("DownloadProgress");
+        }
+
+        private void OnPropertyChanged(string propertyName)
+        {
             if (PropertyChanged != null)
             {
-                PropertyChanged(this, new PropertyChangedEventArgs("DownloadProgress"));
+                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
             }
         }
 
@@ -221,6 +235,8 @@ namespace ACast.Database
         public string ImageFilename { get; internal set; }
 
         public DateTime LastUpdateDate { get; set; }
+
+        public Int32 MediaCount { get; set; }
 
         [Ignore]
         public BitmapImage Image
