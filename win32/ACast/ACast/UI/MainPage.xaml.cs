@@ -55,21 +55,19 @@ namespace ACast
 
             feedDialog.CommandBar = commandBar;
             feedDialog.ViewManager = viewManager;
-            feedDialog.View = feedListView;
-            feedDialog.SearchTextBox = serachFeedTextBox;
 
             feedItemsDialog.CommandBar = commandBar;
             feedItemsDialog.ViewManager = viewManager;
-            feedItemsDialog.View = feedItemsListView;
-            feedItemsDialog.SearchTextBox = serachFeedDetailsTextBox;
-            feedItemsDialog.PickerButton = pickerButton;
-            feedItemsDialog.PlayButton = playButton;
+
+            feedViewControl.ViewController = feedDialog;
 
             SQLiteDb.Create();
 
             viewManager.SwitchTo(PivotView.Feeds);
 
         }
+
+        
 
         /// <summary>
         /// Invoked when this page is about to be displayed in a Frame.

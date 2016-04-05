@@ -92,6 +92,12 @@
     <Compile Include="UI\FeedUrlDialog.xaml.cs">
       <DependentUpon>FeedUrlDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UI\FeedItemsViewControl.xaml.cs">
+      <DependentUpon>FeedItemsViewControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UI\FeedViewControl.xaml.cs">
+      <DependentUpon>FeedViewControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UI\MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
@@ -122,6 +128,14 @@
     <Page Include="UI\FeedUrlDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UI\FeedItemsViewControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UI\FeedViewControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UI\MainPage.xaml">
       <SubType>Designer</SubType>

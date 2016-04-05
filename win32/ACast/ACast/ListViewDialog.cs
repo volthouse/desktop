@@ -60,161 +60,69 @@ namespace ACast
         }
 
     }
-
+    
     public class ListViewDialog
     {
-        protected AddButton addButton = new AddButton();
-        protected RemoveButton removeButton = new RemoveButton();
-        protected MultiSelectButton multiSelectButton = new MultiSelectButton();
-        protected SearchButton searchButton = new SearchButton();
-        protected CancelButton cancelButton = new CancelButton();
-        protected RefreshButton refreshButton = new RefreshButton();
-
-        protected AutoSuggestBox searchTextBox;
-
-        protected ListView listView;
         protected SynchronizationContext context;
+
+        public event EventHandler OnActivate;
+        public event RoutedEventHandler OnAdd;
 
         public ListViewDialog(SynchronizationContext context)
         {
             this.context = context;
-
-            addButton.Click += (object sender, Windows.UI.Xaml.RoutedEventArgs e) => { OnAdd(); };
-            removeButton.Click += (object sender, Windows.UI.Xaml.RoutedEventArgs e) => { OnRemove(); };
-            refreshButton.Click += (object sender, Windows.UI.Xaml.RoutedEventArgs e) => { OnRefresh(); };
-            searchButton.Click += (object sender, Windows.UI.Xaml.RoutedEventArgs e) => { OnSearchButtonClick(); };
-            cancelButton.Click += (object sender, Windows.UI.Xaml.RoutedEventArgs e) => { OnCancelButtonClick(); };
         }
 
         public ViewManager ViewManager { get; set; }
 
         public CommandBar CommandBar { get; set; }
 
-        public AutoSuggestBox SearchTextBox {
-            get { return searchTextBox; }
-            set
-            {
-                if (searchTextBox != null)
-                {
-                    searchTextBox.KeyDown -= searchTextBox_KeyDown;
-                }
-                searchTextBox = value;
-                searchTextBox.Visibility = Visibility.Collapsed;
-                searchTextBox.KeyDown += searchTextBox_KeyDown;
-            }
-        }
-
-        public virtual ListView View {
-            get { return listView; }
-            set {
-                listView = value;
-                listView.ItemClick += VievItemClick;
-            }
-        }
-
         public virtual void Activate()
-        {            
-        }
-
-        public virtual void OnLoaded()
         {
-            //View.ItemsSource = listController.List;
-        }
-
-        public virtual void Deactivate()
-        {
-
-        }
-
-        public virtual void OnAdd()
-        {
-
-        }
-
-        public virtual void OnRemove()
-        {
-
-        }
-
-        public virtual void OnRefresh()
-        {
-
-        }
-
-        public virtual void OnSearchButtonClick()
-        {
-            CommandBar.PrimaryCommands.Remove(searchButton);
-            CommandBar.PrimaryCommands.Add(cancelButton);
-            searchTextBox.Visibility = Visibility.Visible;
-        }
-
-        public virtual void OnCancelButtonClick()
-        {
-            if (searchTextBox.Visibility == Visibility.Visible)
+            if(OnActivate != null)
             {
-                searchTextBox.Visibility = Visibility.Collapsed;
-                CommandBar.PrimaryCommands.Remove(cancelButton);
-                CommandBar.PrimaryCommands.Add(searchButton);
+                OnActivate(this, EventArgs.Empty);
             }
         }
 
-        public virtual void OnSearch(string searchString)
-        {
-
-        }
-
-        public virtual void OnItemClick(object item)
-        {
-
-        }
-
-        private void VievItemClick(object sender, ItemClickEventArgs e)
-        {
-            OnItemClick(e.ClickedItem);
-        }
-
-        void searchTextBox_KeyDown(object sender, Windows.UI.Xaml.Input.KeyRoutedEventArgs e)
-        {
-            if (e.Key == Windows.System.VirtualKey.Enter)
-            {
-                OnSearch(searchTextBox.Text);
-            }
-        }
     }
 
     public class FeedDialog :  ListViewDialog
     {
         public FeedDialog(SynchronizationContext context) : base(context)
         {
-        }
+        }        
 
-        public override void Activate()
-        {
-            base.Activate();
+        //public override async void OnAdd()
+        //{
+        //    FeedUrlDialog dlg = new FeedUrlDialog();
+        //    await dlg.ShowAsync();
+        //    //View.ItemsSource = FeedManager.Feeds;
+        //    if (SetDataSoure != null)
+        //    {
+        //        SetDataSoure(this, FeedManager.Feeds);
+        //    }
+        //}
 
-            View.ItemsSource = FeedManager.Feeds;
+        //public override void OnItemClick(object item)
+        //{
+        //    Feed feed = item as Feed;
+        //    if (feed != null)
+        //    {
+        //        FeedManager.CurrentFeedId = feed.Id;
+        //        ViewManager.SwitchTo(PivotView.FeedItems);
+        //    }
+        //}
 
-            CommandBar.PrimaryCommands.Clear();
-            CommandBar.PrimaryCommands.Add(addButton);
-            CommandBar.PrimaryCommands.Add(removeButton);
-        }
-
-        public override async void OnAdd()
-        {
-            FeedUrlDialog dlg = new FeedUrlDialog();
-            await dlg.ShowAsync();
-            View.ItemsSource = FeedManager.Feeds;
-        }
-
-        public override void OnItemClick(object item)
-        {
-            Feed feed = item as Feed;
-            if (feed != null)
-            {
-                FeedManager.CurrentFeedId = feed.Id;
-                ViewManager.SwitchTo(PivotView.FeedItems);
-            }
-        }
+        //public override void ItemClick(object sender, ItemClickEventArgs e)
+        //{
+        //    Feed feed = e.ClickedItem as Feed;
+        //    if (feed != null)
+        //    {
+        //        FeedManager.CurrentFeedId = feed.Id;
+        //        ViewManager.SwitchTo(PivotView.FeedItems);
+        //    }
+        //}
     }
 
     public class FeedItemsDialog : ListViewDialog
@@ -257,16 +165,21 @@ namespace ACast
             }
         } 
 
-        public override void Activate()
-        {
-            base.Activate();
+        //public override void Activate()
+        //{
+        //    base.Activate();
 
-            View.ItemsSource = FeedManager.FeedItems;
+        //    //View.ItemsSource = FeedManager.FeedItems;
 
-            CommandBar.PrimaryCommands.Clear();
-            CommandBar.PrimaryCommands.Add(multiSelectButton);
-            CommandBar.PrimaryCommands.Add(searchButton);
-        }
+        //    if (SetDataSoure != null)
+        //    {
+        //        SetDataSoure(this, FeedManager.FeedItems);
+        //    }
+
+        //    CommandBar.PrimaryCommands.Clear();
+        //    CommandBar.PrimaryCommands.Add(multiSelectButton);
+        //    CommandBar.PrimaryCommands.Add(searchButton);
+        //}
 
         private void pickerButton_Click(object sender, RoutedEventArgs e)
         {

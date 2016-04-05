@@ -5,71 +5,18 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:Db="using:ACast.Database"
+    xmlns:UI="using:ACast.UI"
     x:Class="ACast.MainPage"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-    <Page.Resources>
-        <DataTemplate x:Key="DataTemplate1">
-            <Grid Height="100" Margin="0,0,0,5">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="100"/>
-                    <ColumnDefinition/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition/>
-                    <RowDefinition/>
-                </Grid.RowDefinitions>
-                <Image x:Name="image" Source="{Binding Image, Mode=OneWay}" Stretch="UniformToFill" Grid.RowSpan="2" VerticalAlignment="Top"/>
-                <TextBlock x:Name="titleTextBox" TextWrapping="Wrap" Text="{Binding Title, Mode=OneWay}" VerticalAlignment="Stretch" Grid.Column="1" HorizontalAlignment="Left" Margin="5,0,0,0"/>
-                <TextBlock x:Name="infoTextBox" TextWrapping="Wrap" Text="{Binding Info, Mode=OneWay}" VerticalAlignment="Stretch" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Left" Margin="5,0,0,0"/>
-            </Grid>
-        </DataTemplate>
-        <DataTemplate x:Key="DataTemplate2">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="200"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition/>
-                </Grid.RowDefinitions>
-                <TextBlock x:Name="textBox" HorizontalAlignment="Stretch" Margin="0" TextWrapping="Wrap" Text="{Binding Title, Mode=TwoWay}" VerticalAlignment="Stretch"/>
-                <AppBarButton x:Name="pickerButton" Grid.Column="1" Click="feedItemButton_Click" Grid.RowSpan="1" Label="{Binding DownloadProgress}">
-                    <AppBarButton.Icon>
-                        <SymbolIcon Symbol="{Binding MediaItemStateSymbol}"/>
-                    </AppBarButton.Icon>
-                </AppBarButton>
-                <AppBarButton x:Name="playButton" Grid.Column="2" Click="playItemButton_Click" Grid.RowSpan="2" Icon="Play"/>
-            </Grid>
-        </DataTemplate>
-    </Page.Resources>
-    <Page.DataContext>
-        <Db:FeedItem/>
-    </Page.DataContext>
-
     <Page.BottomAppBar>
         <CommandBar x:Name="commandBar"/>
     </Page.BottomAppBar>
     <Pivot x:Name="pivot" Title="Pivot">
         <PivotItem x:Name="feedsPivotItem" Header="Feeds">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition/>
-                </Grid.RowDefinitions>
-                <AutoSuggestBox x:Name="serachFeedTextBox" PlaceholderText="Search"/>
-                <ListView x:Name="feedListView" IsItemClickEnabled="True" ItemsSource="{Binding Feeds, Mode=OneWay}" ItemTemplate="{StaticResource DataTemplate1}" Grid.Row="1"/>
-            </Grid>
+            <UI:FeedViewControl x:Name="feedViewControl"/>
         </PivotItem>
         <PivotItem x:Name="feedDetailsPivotItem" Header="Items">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition/>
-                </Grid.RowDefinitions>
-                <AutoSuggestBox x:Name="serachFeedDetailsTextBox" PlaceholderText="Search"/>
-                <ListView x:Name="feedItemsListView" IsItemClickEnabled="True" Grid.Row="1" Margin="0,0.333,0,-2.167" ItemTemplate="{StaticResource DataTemplate2}"/>
-            </Grid>
+            <UI:FeedItemsViewControl x:Name="feedItemsViewControl"/>
         </PivotItem>
         <PivotItem x:Name="playerPivotItem" Header="Player">
             <Grid>
