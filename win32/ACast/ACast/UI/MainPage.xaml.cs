@@ -26,6 +26,7 @@ namespace ACast
         private SynchronizationContext context;
         private int currentFeedIdx = 0;
 
+        private ViewManager viewManager;
         private FeedDialog feedDialog;
         private FeedItemsDialog feedItemsDialog;
 
@@ -44,47 +45,32 @@ namespace ACast
 
             context = SynchronizationContext.Current;
 
+            viewManager = new ViewManager();
             feedDialog = new FeedDialog(context);
             feedItemsDialog = new FeedItemsDialog(context);
 
+            viewManager.Pivot = pivot;
+            viewManager.Dialogs.Add(feedDialog);
+            viewManager.Dialogs.Add(feedItemsDialog);
+
             feedDialog.CommandBar = commandBar;
+            feedDialog.ViewManager = viewManager;
             feedDialog.View = feedListView;
+            feedDialog.SearchTextBox = serachFeedTextBox;
 
             feedItemsDialog.CommandBar = commandBar;
+            feedItemsDialog.ViewManager = viewManager;
             feedItemsDialog.View = feedItemsListView;
-
-            pivot.SelectionChanged += Pivot_SelectionChanged;
+            feedItemsDialog.SearchTextBox = serachFeedDetailsTextBox;
+            feedItemsDialog.PickerButton = pickerButton;
+            feedItemsDialog.PlayButton = playButton;
 
             SQLiteDb.Create();
 
+            viewManager.SwitchTo(PivotView.Feeds);
+
         }
 
-        private void Pivot_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            switch (pivot.SelectedIndex)
-            {
-                case 0:
-                    feedDialog.Activate();
-                    break;
-                case 1:
-                    feedItemsDialog.Activate();
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        //public void Play(FeedItemObsolet feedItem)
-        //{
-        //    pivot.SelectedItem = playerPivotItem;
-        //    playerControl.Play(feedItem);
-        //}
-
-        //public void Show(FeedItemObsolet feedItem)
-        //{
-        //    pivot.SelectedItem = playerPivotItem;
-        //    playerControl.Show(feedItem);
-        //}
         /// <summary>
         /// Invoked when this page is about to be displayed in a Frame.
         /// </summary>
@@ -126,32 +112,6 @@ namespace ACast
         private void app_Suspending(object sender, Windows.ApplicationModel.SuspendingEventArgs e)
         {
             Player.Instance.ForegroundAppSuspending(e.SuspendingOperation.GetDeferral());
-        }
-
-        private void feedItemButton_Click(object sender, RoutedEventArgs e)
-        {
-            AppBarButton button = e.OriginalSource as AppBarButton;
-            if (button != null)
-            {
-                FeedItem feedItem = button.DataContext as FeedItem;
-                if (feedItem != null)
-                {
-                    FeedManager.Instance.DownloadFeedItemMedia(feedItem);
-                }
-            }           
-        }
-
-        private void playItemButton_Click(object sender, RoutedEventArgs e)
-        {
-            AppBarButton button = e.OriginalSource as AppBarButton;
-            if (button != null)
-            {
-                FeedItem feedItem = button.DataContext as FeedItem;
-                if (feedItem != null)
-                {
-                    Player.Instance.Play(feedItem);
-                }
-            }
         }
     }
 
