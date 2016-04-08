@@ -13,6 +13,7 @@ using Windows.UI.Xaml.Navigation;
 using System.Linq;
 using Windows.ApplicationModel.Background;
 using ACast.Database;
+using ACast.UI;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=391641
 
@@ -24,13 +25,10 @@ namespace ACast
     public sealed partial class MainPage : Page
     {
         private SynchronizationContext context;
-        private int currentFeedIdx = 0;
 
+        private CommandBarManager commandBarManager;
         private ViewManager viewManager;
-        private FeedDialog feedDialog;
-        private FeedItemsDialog feedItemsDialog;
-
-
+        
         public static MainPage Instance;
 
         public MainPage()
@@ -46,20 +44,21 @@ namespace ACast
             context = SynchronizationContext.Current;
 
             viewManager = new ViewManager();
-            feedDialog = new FeedDialog(context);
-            feedItemsDialog = new FeedItemsDialog(context);
-
             viewManager.Pivot = pivot;
-            viewManager.Dialogs.Add(feedDialog);
-            viewManager.Dialogs.Add(feedItemsDialog);
 
-            feedDialog.CommandBar = commandBar;
-            feedDialog.ViewManager = viewManager;
+            commandBarManager = new CommandBarManager();
+            commandBarManager.CommandBar = commandBar;
+            commandBarManager.ButtonClick += feedViewControl.CommandBarButtonClick;
 
-            feedItemsDialog.CommandBar = commandBar;
-            feedItemsDialog.ViewManager = viewManager;
+            viewManager.ActiveViewChanged += feedViewControl.ActiveViewChanged;
+            viewManager.ActiveViewChanged += feedItemsViewControl.ActiveViewChanged;
 
-            feedViewControl.ViewController = feedDialog;
+            feedViewControl.EnableButtons += commandBarManager.EnableButtons;
+            feedViewControl.ActivateView += viewManager.ActivateView;
+
+            feedItemsViewControl.EnableButtons += commandBarManager.EnableButtons;
+            feedItemsViewControl.ActivateView += viewManager.ActivateView;
+            feedItemsViewControl.Play += Player.Instance.Play;
 
             SQLiteDb.Create();
 
@@ -133,72 +132,4 @@ namespace ACast
             IsOpen = true;
         }
     }
-
-    public class AppBarButtonBase : AppBarButton
-    {
-
-        public AppBarButtonBase()
-        {
-            Debug.WriteLine("Add button");
-        }
-
-        public void Show(bool visible)
-        {
-            Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
-        }
-
-        public void Hide(bool visible)
-        {
-            Visibility = visible ? Visibility.Collapsed : Visibility.Visible;
-        }
-    }
-
-    public class AddButton : AppBarButtonBase
-    {
-        public AddButton()
-        {
-            Icon = new SymbolIcon(Symbol.Add);
-        }
-    }
-
-    public class RemoveButton : AppBarButtonBase
-    {
-        public RemoveButton()
-        {
-            Icon = new SymbolIcon(Symbol.Delete);
-        }
-    }
-
-    public class RefreshButton : AppBarButtonBase
-    {
-        public RefreshButton()
-        {
-            Icon = new SymbolIcon(Symbol.Refresh);
-        }
-    }
-
-    public class MultiSelectButton : AppBarButtonBase
-    {
-        public MultiSelectButton()
-        {
-            Icon = new SymbolIcon(Symbol.Bullets);
-        }
-    }
-
-    public class CancelButton : AppBarButtonBase
-    {
-        public CancelButton()
-        {
-            Icon = new SymbolIcon(Symbol.Cancel);
-        }
-    }
-
-    public class SearchButton : AppBarButtonBase
-    {
-        public SearchButton()
-        {
-            Icon = new SymbolIcon(Symbol.Zoom);
-        }
-    }
-
 }

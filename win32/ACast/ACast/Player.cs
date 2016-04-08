@@ -85,6 +85,22 @@ namespace ACast
             deferral.Complete();
         }
 
+        public void Play(object sender, FeedItem feedItem)
+        {
+            DebugService.Add("Player: Play button pressed");
+            string path = feedItem.Path + @"\" + feedItem.FileName;
+
+            MessageService.SendMessageToBackground(new StartTrackMessage(
+                new Uri(path), feedItem.Title, TimeSpan.Zero
+            ));
+
+            if (MediaPlayerState.Paused == currentPlayer.CurrentState)
+            {
+                currentPlayer.Play();
+            }
+
+        }
+
         public void Play(FeedItem feedItem)
         {
             DebugService.Add("Player: Play button pressed");

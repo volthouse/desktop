@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ACast.Database;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -19,45 +20,48 @@ namespace ACast.UI
 {
     public sealed partial class FeedViewControl : UserControl
     {
-        private FeedDialog viewController;
+        public event EventHandler<ButtonFlags> EnableButtons;
 
-        private AddButton addButton = new AddButton();
-        private RemoveButton removeButton = new RemoveButton();
-        private MultiSelectButton multiSelectButton = new MultiSelectButton();
-        private SearchButton searchButton = new SearchButton();
-        private CancelButton cancelButton = new CancelButton();
-        private RefreshButton refreshButton = new RefreshButton();
-
+        public event EventHandler<PivotView> ActivateView;
 
         public FeedViewControl()
         {
             this.InitializeComponent();
 
-            addButton.Click += AddButton_Click;
         }
 
-        public FeedDialog ViewController {
-            get { return viewController; }
-            set
+        public void ActiveViewChanged(object sender, PivotView view)
+        {
+            if (view == PivotView.Feeds)
             {
-                viewController = value;
-                viewController.OnActivate += ViewController_OnActivate;
+                listView.ItemsSource = FeedManager.Feeds;
+                OnEnableButtons(ButtonFlags.Add | ButtonFlags.Remove);
+            }
+
+        }
+
+        public async void CommandBarButtonClick(object sender, ButtonFlags buttonFlags)
+        {
+            switch (buttonFlags)
+            {
+                case ButtonFlags.Add:
+                    FeedUrlDialog dlg = new FeedUrlDialog();
+                    await dlg.ShowAsync();
+                    listView.ItemsSource = FeedManager.Feeds;
+                    break;
+                case ButtonFlags.Remove:
+                    break;
+                case ButtonFlags.Cancel:
+                    break;
+                case ButtonFlags.Multiselect:
+                    break;
+                case ButtonFlags.Search:
+                    break;
+                default:
+                    break;
             }
         }
 
-        private void ViewController_OnActivate(object sender, EventArgs e)
-        {
-            listView.ItemsSource = FeedManager.Feeds;
-            viewController.CommandBar.PrimaryCommands.Clear();
-            viewController.CommandBar.PrimaryCommands.Add(addButton);
-        }
-
-        private async void AddButton_Click(object sender, RoutedEventArgs e)
-        {
-            FeedUrlDialog dlg = new FeedUrlDialog();
-            await dlg.ShowAsync();
-            listView.ItemsSource = FeedManager.Feeds;
-        }
 
         private void pickerButton_Click(object sender, RoutedEventArgs e)
         {
@@ -73,6 +77,28 @@ namespace ACast.UI
 
         private void listView_ItemClick(object sender, ItemClickEventArgs e)
         {
+            Feed feed = e.ClickedItem as Feed;
+            if (feed != null)
+            {
+                FeedManager.CurrentFeedId = feed.Id;
+                OnActivateView(PivotView.FeedItems);
+            }
+        }
+
+        private void OnEnableButtons(ButtonFlags buttonFlags)
+        {
+            if (EnableButtons != null)
+            {
+                EnableButtons(this, buttonFlags);
+            }
+        }
+
+        private void OnActivateView(PivotView view)
+        {
+            if (ActivateView != null)
+            {
+                ActivateView(this, view);
+            }
         }
     }
 }

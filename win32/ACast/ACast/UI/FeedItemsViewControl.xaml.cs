@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ACast.Database;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -19,36 +20,53 @@ namespace ACast.UI
 {
     public sealed partial class FeedItemsViewControl : UserControl
     {
-        private FeedDialog viewController;
+        public event EventHandler<ButtonFlags> EnableButtons;
+
+        public event EventHandler<PivotView> ActivateView;
+
+        public event EventHandler<FeedItem> Play;
 
         public FeedItemsViewControl()
         {
             this.InitializeComponent();
         }
 
-        public FeedDialog ViewController
+        public void ActiveViewChanged(object sender, PivotView view)
         {
-            get { return viewController; }
-            set
+            if (view == PivotView.FeedItems)
             {
-                viewController = value;
-                viewController.OnActivate += ViewController_OnActivate;
+                listView.ItemsSource = FeedManager.FeedItems;
+                OnEnableButtons(ButtonFlags.Multiselect | ButtonFlags.Search);
             }
-        }
 
-        private void ViewController_OnActivate(object sender, EventArgs e)
-        {
-            listView.ItemsSource = FeedManager.Feeds;
-            viewController.CommandBar.PrimaryCommands.Clear();
-            viewController.CommandBar.PrimaryCommands.Add(addButton);
         }
 
         private void pickerButton_Click(object sender, RoutedEventArgs e)
         {
+            Control control = sender as Control;
+            if (control != null)
+            {
+                FeedItem feedItem = control.DataContext as FeedItem;
+                if (feedItem != null)
+                {
+                    FeedManager.Instance.DownloadFeedItemMedia(feedItem);
+                }
+            }
         }
 
         private void playButton_Click(object sender, RoutedEventArgs e)
         {
+            OnActivateView(PivotView.Player);
+
+            Control control = sender as Control;
+            if (control != null)
+            {
+                FeedItem feedItem = control.DataContext as FeedItem;
+                if (feedItem != null)
+                {
+                    OnPlay(feedItem);
+                }
+            }
         }
 
         private void serachFeedTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
@@ -57,6 +75,30 @@ namespace ACast.UI
 
         private void listView_ItemClick(object sender, ItemClickEventArgs e)
         {
+        }
+
+        private void OnEnableButtons(ButtonFlags buttonFlags)
+        {
+            if (EnableButtons != null)
+            {
+                EnableButtons(this, buttonFlags);
+            }
+        }
+
+        private void OnActivateView(PivotView view)
+        {
+            if (ActivateView != null)
+            {
+                ActivateView(this, view);
+            }
+        }
+
+        private void OnPlay(FeedItem feedItem)
+        {
+            if (Play != null)
+            {
+                Play(this, feedItem);
+            }
         }
     }
 }
