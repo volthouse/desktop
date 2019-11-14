@@ -18,6 +18,10 @@ namespace ToTray {
 			Application.SetCompatibleTextRenderingDefault(false);
 
 			IntPtr handle = IntPtr.Zero;
+			byte transparency = 255;
+
+			// totray "c:\app\app.exe 'c:\doc\app.doc'" 8000 "SunAwtFrame" 128
+			// totray "Application path" "Parameter" DelayMs WindowClass Transparency
 
 			if (!string.IsNullOrEmpty(Environment.CommandLine)) {
 				List<string> parameters = new List<string>();				
@@ -50,16 +54,19 @@ namespace ToTray {
 							System.Threading.Thread.Sleep(500);
 						}
 					}
+					if (parameters.Count > 4) {
+						transparency = byte.Parse(parameters[4].Trim());
+					}
 				}
 			}
 
-			Application.Run(new ToTryHandler(handle));
+			Application.Run(new ToTryHandler(handle, transparency));
 		}
 	}
 
 	public class ToTryHandler : ApplicationContext {
 
-		public ToTryHandler(IntPtr handle) {
+		public ToTryHandler(IntPtr handle, byte transparency) {
 			this.notifyIcon = new NotifyIcon();
 			this.notifyIcon.Icon = Properties.Resources.Icon;
 			this.notifyIcon.ContextMenuStrip = new ContextMenuStrip();
@@ -82,6 +89,8 @@ namespace ToTray {
 				this.processWrapper.ToggleVisibility();
 				setIcon(true);
 				this.trackBarHost.Visible = true;
+				this.trackBar.Value = transparency;
+				handleTransparencyValueChanged(this.trackBar, EventArgs.Empty);
 			}
 		}
 
@@ -99,7 +108,15 @@ namespace ToTray {
 
 		void handleHookInvoked(object sender, HookEventArgs e) {
 			int vkCode = Marshal.ReadInt32(e.lParam);
-			if ((Keys)vkCode == Keys.Pause && e.wParam == (IntPtr)UnsaveNativeMethods.WM_KEYDOWN) {
+            if ((Keys)vkCode == Keys.LWin && e.wParam == (IntPtr)UnsaveNativeMethods.WM_KEYDOWN)
+            {
+                winKeyPressed = true;
+            }
+            if ((Keys)vkCode == Keys.LWin && e.wParam == (IntPtr)UnsaveNativeMethods.WM_KEYUP)
+            {
+                winKeyPressed = false;
+            }
+			if (!winKeyPressed && (Keys)vkCode == Keys.Pause && e.wParam == (IntPtr)UnsaveNativeMethods.WM_KEYDOWN) {
 				toggleCurrentProcessVisibility();
 			}
 		}
@@ -243,6 +260,7 @@ namespace ToTray {
 		private ProcessWrapper processWrapper;
 		private TrackBar trackBar;
 		private ToolStripControlHost trackBarHost;
+        private bool winKeyPressed;
 	}
 
 	internal class UnsaveNativeMethods {
@@ -286,6 +304,7 @@ namespace ToTray {
 		public const int LWA_COLORKEY = 0x1;
 		public const int WS_EX_TRANSPARENT = 0x20;
 		public const int WM_KEYDOWN = 0x0100;
+        public const int WM_KEYUP = 0x0101;
 
 		public const int WS_EX_APPWINDOW = 0x00040000;
 		public const int WS_EX_TOOLWINDOW = 0x00000080;
